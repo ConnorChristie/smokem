@@ -93,7 +93,7 @@ void InitializeSlabPrograms()
     Programs.ComputeDivergence = makeProgram({
         Shader(GL_VERTEX_SHADER, "shaders/fluid/fluid.vert"),
         Shader(GL_GEOMETRY_SHADER, "shaders/fluid/pick-layer.gs"),
-        Shader(GL_FRAGMENT_SHADER, "shaders/fluid/compute-divergence.frag")
+        Shader(GL_FRAGMENT_SHADER, "shaders/fluid/divergence.frag")
     });
 
     Programs.ApplyImpulse = makeProgram({
@@ -332,6 +332,7 @@ void Advect(SurfacePod velocity, SurfacePod source, SurfacePod obstacles, Surfac
     SetUniform("InverseSize", recipPerElem(Vector3(float(GridWidth), float(GridHeight), float(GridDepth))));
     SetUniform("TimeStep", TimeStep);
     SetUniform("Dissipation", dissipation);
+    SetUniform("VelocityTexture", 0);
     SetUniform("SourceTexture", 1);
     SetUniform("Obstacles", 2);
 
@@ -352,6 +353,7 @@ void Jacobi(SurfacePod pressure, SurfacePod divergence, SurfacePod obstacles, Su
     glUseProgram(Programs.Jacobi);
     SetUniform("Alpha", -CellSize * CellSize);
     SetUniform("InverseBeta", 0.1666f);
+    SetUniform("Pressure", 0);
     SetUniform("Divergence", 1);
     SetUniform("Obstacles", 2);
 
@@ -371,6 +373,7 @@ void SubtractGradient(SurfacePod velocity, SurfacePod pressure, SurfacePod obsta
     glUseProgram(Programs.SubtractGradient);
     SetUniform("GradientScale", GradientScale);
     SetUniform("HalfInverseCellSize", 0.5f / CellSize);
+    SetUniform("Velocity", 0);
     SetUniform("Pressure", 1);
     SetUniform("Obstacles", 2);
 
@@ -389,6 +392,7 @@ void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod des
 {
     glUseProgram(Programs.ComputeDivergence);
     SetUniform("HalfInverseCellSize", 0.5f / CellSize);
+    SetUniform("Velocity", 0);
     SetUniform("Obstacles", 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
@@ -405,7 +409,7 @@ void ApplyImpulse(SurfacePod dest, Vector3 position, float value)
     glUseProgram(Programs.ApplyImpulse);
     SetUniform("Point", position);
     SetUniform("Radius", SplatRadius);
-    SetUniform("FillColor", Vector3(value, value, value));
+    SetUniform("Intensity", Vector3(value));
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glEnable(GL_BLEND);
@@ -416,6 +420,7 @@ void ApplyImpulse(SurfacePod dest, Vector3 position, float value)
 void ApplyBuoyancy(SurfacePod velocity, SurfacePod temperature, SurfacePod density, SurfacePod dest)
 {
     glUseProgram(Programs.ApplyBuoyancy);
+    SetUniform("Velocity", 0);
     SetUniform("Temperature", 1);
     SetUniform("Density", 2);
     SetUniform("AmbientTemperature", AmbientTemperature);

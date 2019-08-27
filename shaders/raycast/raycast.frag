@@ -5,6 +5,7 @@ out vec4 FragColor;
 uniform sampler3D Density;
 uniform sampler3D LightCache;
 
+uniform vec3 SmokeColor = vec3(1, 1, 1);
 uniform float Absorption = 10.0;
 uniform mat4 Modelview;
 uniform float FocalLength;
@@ -76,7 +77,7 @@ void main()
     for (int i = 0; i < ViewSamples && remainingLength > 0.0; ++i, pos += viewDir, remainingLength -= StepSize)
     {
         float density = GetDensity(pos);
-        vec3 lightColor = vec3(1, 0.2, 0.4);
+        vec3 lightColor = SmokeColor;
 
         if (pos.z < 0.1)
         {
