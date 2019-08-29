@@ -54,6 +54,7 @@ GLuint makeProgram(std::initializer_list<Shader> shaders)
 
     glBindAttribLocation(program, SlotPosition, "Position");
     glBindAttribLocation(program, SlotTexCoord, "TexCoord");
+    glBindAttribLocation(program, SlotNormal, "Normal");
     glLinkProgram(program);
 
     GLchar compilerSpew[256];

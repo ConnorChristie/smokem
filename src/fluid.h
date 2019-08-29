@@ -12,6 +12,8 @@
 #include "shader.h"
 #include "vmath.hpp"
 
+constexpr auto Pi = (3.14159265f);
+
 using namespace vmath;
 using std::string;
 

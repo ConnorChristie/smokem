@@ -14,6 +14,7 @@
 enum AttributeSlot {
     SlotPosition,
     SlotTexCoord,
+    SlotNormal,
 };
 
 struct TexturePod {
