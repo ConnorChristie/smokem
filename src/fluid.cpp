@@ -24,7 +24,7 @@ void PezInitialize(GLFWwindow* window)
 {
     PezConfig cfg = PezGetConfig();
 
-    camera = new Camera(cfg.Width, cfg.Height);
+    camera = new Camera(cfg.Width, cfg.Height, glm::vec3(-70, 35, 70));
 
     ModelProgram = new Program({
         Shader(GL_VERTEX_SHADER, "shaders/model.vert"),
@@ -33,27 +33,15 @@ void PezInitialize(GLFWwindow* window)
 
     assert(checkError());
 
-    glGenVertexArrays(1, &Vaos.CubeCenter);
-    glBindVertexArray(Vaos.CubeCenter);
-    CreatePointVbo(0, 0, 0);
-    glEnableVertexAttribArray(SlotPosition);
-    glVertexAttribPointer(SlotPosition, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-
-    glGenVertexArrays(1, &Vaos.FullscreenQuad);
-    glBindVertexArray(Vaos.FullscreenQuad);
-    CreateQuadVbo();
-    glEnableVertexAttribArray(SlotPosition);
-    glVertexAttribPointer(SlotPosition, 2, GL_SHORT, GL_FALSE, 2 * sizeof(short), 0);
-
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\torch\\torch.obj", glm::vec3(0), glm::vec3(2, 0, 5), 2.0f);
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\shuttle\\space-shuttle-orbiter.obj", glm::vec3(0), glm::vec3(0, 0, 8), 0.1f);
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\standard-male\\standard-male-figure.obj", glm::vec3(0), glm::vec3(0, 0, 8), 0.1f);
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\tenryuu\\light-cruiser-tenryuu.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 5), 1.5f);
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\revil\\resident-evil-racoon-city-party-girl.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 5), 1.0f);
     objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\blender\\untitled.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 0), 1.0f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\sonic\\sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(-27, -13, 0), 0.3f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\medieval-house\\medieval-house-2.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(10, 1.5f, 0), 3.0f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\shuttle\\space-shuttle-orbiter.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(42, -48, 280), 0.04f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\sonic\\sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(-30, 1, 0), 0.3f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\medieval-house\\medieval-house-2.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(10, 4.5f, 0), 3.0f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\shuttle\\space-shuttle-orbiter.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(50, 8, 65), 0.04f));
 
     lights.push_back({
         glm::vec3(20, 100, 50), // position of the light in the world space.
@@ -81,8 +69,8 @@ void PezUpdate(GLFWwindow* window, long long dt)
 
     camera->update(window, dt);
 
-    glm::mat4 viewMatrix = camera->getView();
-    glm::mat4 projectionMatrix = camera->getProjection();
+    glm::mat4 viewMatrix = camera->getViewMatrix();
+    glm::mat4 projectionMatrix = camera->getProjectionMatrix();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, cfg.Width, cfg.Height);
@@ -131,6 +119,22 @@ void PezUpdate(GLFWwindow* window, long long dt)
         ImGui::Begin("Smokem");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+        if (ImGui::CollapsingHeader("Camera"))
+        {
+            glm::vec3 pos = camera->getPosition();
+
+            ImGui::PushItemWidth(100);
+            bool changed = ImGui::DragFloat("X", &pos.x, 0.2f, NULL, NULL); ImGui::SameLine();
+            changed = changed || ImGui::DragFloat("Y", &pos.y, 0.2f, NULL, NULL); ImGui::SameLine();
+            changed = changed || ImGui::DragFloat("Z", &pos.z, 0.2f, NULL, NULL);
+            ImGui::PopItemWidth();
+
+            if (changed)
+            {
+                camera->setPosition(pos);
+            }
+        }
+
         if (ImGui::CollapsingHeader("Objects"))
         {
             for (auto i = 0; i < objects.size(); i++)
@@ -140,7 +144,6 @@ void PezUpdate(GLFWwindow* window, long long dt)
                 if (ImGui::TreeNode(objName.c_str()))
                 {
                     glm::vec3 pos = objects.at(i)->getTranslation();
-                    //float x = pos.x, y = pos.y, z = pos.z;
 
                     ImGui::PushItemWidth(100);
                     bool changed = ImGui::DragFloat("X", &pos.x, 0.2f, NULL, NULL); ImGui::SameLine();
@@ -176,10 +179,10 @@ void PezRender()
 
     for (const auto obj : objects)
     {
-        glm::mat3 normMtx = glm::transpose(glm::inverse(glm::mat3(obj->getModelMatrix() * camera->getView())));
+        glm::mat3 normMtx = glm::transpose(glm::inverse(glm::mat3(obj->getModelMatrix() * camera->getViewMatrix())));
         glUniformMatrix3fv(glGetUniformLocation(p->id(), "normal_matrix"), 1, false, glm::value_ptr(normMtx));
     
-        obj->render(p->id(), true);
+        obj->render(p->id());
     }
 
     ImGui::Render();

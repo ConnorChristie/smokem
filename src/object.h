@@ -21,26 +21,16 @@ public:
 
     ~Object();
 
-    /** Renders the vertex data associated with this Object.
-     * @param   programID   The shader program to buffer the object data to.
-	 * @param	ignoreChecks True if checks for sending texture data etc to the GLSL shaders should be ignored.
-	 */
-    void render(GLuint programID, bool ignoreChecks = false);
+    void render(GLuint programID);
 
     void setRotation(glm::vec3 rotation);
     void setTranslation(glm::vec3 translation);
     void setScale(float scale);
 
-    unsigned int getVerticesSize() const { return mVerticesSize; };
-    unsigned int getIndicesSize() const { return mIndicesSize; };
-	unsigned int getNormalsSize() const { return mNormalsSize; };
-    unsigned int getTexCoordsSize() const { return mTexCoordsSize; };
-
     glm::vec3 getTranslation() const { return mTranslate; };
     glm::vec3 getRotation() const { return mRotate; };
     float getScaleFactor() const { return mScale; };
 
-    glm::vec3 getPosition();
     glm::mat4 getModelMatrix();
 
 protected:
@@ -56,13 +46,7 @@ protected:
 
     void calcModelMatrix();
 
-    unsigned int mVerticesSize;
-    unsigned int mIndicesSize;
-    unsigned int mNormalsSize;
-    unsigned int mTexCoordsSize;
-
     std::vector<Shape> mShapes;
-    glm::vec3 mCentres;
 
     glm::vec3 mInitialRotate;
     glm::vec3 mRotate;

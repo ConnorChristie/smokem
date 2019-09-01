@@ -17,12 +17,6 @@ Object::~Object()
 
 void Object::objectInit(GLuint programID, const char* objfile, glm::vec3 rotate, glm::vec3 translate, float scale)
 {
-    mVerticesSize = 0;
-    mIndicesSize = 0;
-    mNormalsSize = 0;
-    mTexCoordsSize = 0;
-    mCentres = glm::vec3(0.0f, 0.0f, 0.0f);
-
     setScale(scale);
     setTranslation(translate);
     mInitialRotate = rotate;
@@ -43,37 +37,12 @@ void Object::objectInit(GLuint programID, const char* objfile, glm::vec3 rotate,
 
     for (const auto& shape : shapes)
     {
-        for (int j = 0; j < shape.mesh.positions.size(); j++)
-        {
-            if (j % VALS_PER_VERT == 0)
-            {
-                mCentres.x += shape.mesh.positions.at(j);
-            }
-            else if (j % VALS_PER_VERT == 1)
-            {
-                mCentres.y += shape.mesh.positions.at(j);
-            }
-            else if (j % VALS_PER_VERT == 2)
-            {
-                mCentres.z += shape.mesh.positions.at(j);
-            }
-        }
-
-        mVerticesSize += shape.mesh.positions.size();
-        mIndicesSize += shape.mesh.indices.size();
-        mNormalsSize += shape.mesh.normals.size();
-        mTexCoordsSize += shape.mesh.texcoords.size();
-
         // materials are usually on a per-shape basis so let's grab the first one and use that
         int materialId = shape.mesh.material_ids.at(0);
 
         Shape sh(programID, shape, materials.at(materialId), directory);
         mShapes.push_back(sh);
     }
-
-    mCentres.x /= (mVerticesSize / VALS_PER_VERT);
-    mCentres.y /= (mVerticesSize / VALS_PER_VERT);
-    mCentres.z /= (mVerticesSize / VALS_PER_VERT);
 }
 
 void Object::calcModelMatrix()
@@ -81,7 +50,7 @@ void Object::calcModelMatrix()
     if (mModelMatrixChanged)
     {
         mModelMatrix = glm::mat4();
-        mModelMatrix = glm::translate(mModelMatrix, mCentres + mTranslate);
+        mModelMatrix = glm::translate(mModelMatrix, mTranslate);
         mModelMatrix = glm::scale(mModelMatrix, glm::vec3(mScale));
         mModelMatrix = glm::rotate(mModelMatrix, mRotate.x, glm::vec3(1.0f, 0.0f, 0.0f));
         mModelMatrix = glm::rotate(mModelMatrix, mRotate.y, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -91,14 +60,14 @@ void Object::calcModelMatrix()
     }
 }
 
-void Object::render(GLuint programID, bool ignoreChecks)
+void Object::render(GLuint programID)
 {
     glUseProgram(programID);
     glUniformMatrix4fv(glGetUniformLocation(programID, "model_matrix"), 1, false, glm::value_ptr(getModelMatrix()));
 
     for (int i = 0; i < mShapes.size(); i++)
     {
-        mShapes.at(i).render(programID, ignoreChecks);
+        mShapes.at(i).render(programID);
     }
 }
 
@@ -118,11 +87,6 @@ void Object::setTranslation(glm::vec3 translation)
 {
     mTranslate = translation;
     mModelMatrixChanged = true;
-}
-
-glm::vec3 Object::getPosition()
-{
-    return glm::vec3(-mCentres.x + mTranslate.x, -mCentres.y + mTranslate.y, -mCentres.z + mTranslate.z);
 }
 
 glm::mat4 Object::getModelMatrix()

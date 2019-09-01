@@ -30,40 +30,6 @@ using std::string;
 
 typedef std::chrono::duration<double, std::ratio<1, 1000000>> us;
 
-static struct {
-    SlabPod Velocity;
-    SlabPod Density;
-    SlabPod Pressure;
-    SlabPod Temperature;
-} Slabs;
-
-static struct {
-    SurfacePod Divergence;
-    SurfacePod Obstacles;
-    SurfacePod LightCache;
-    SurfacePod BlurredDensity;
-} Surfaces;
-
-static struct {
-    Matrix4 Projection;
-    Matrix4 Modelview;
-    Matrix4 View;
-    Matrix4 ModelviewProjection;
-    Matrix4 ModelModelviewProjection;
-
-    glm::mat4 ViewMatrix;
-} Matrices;
-
-static struct {
-    GLuint CubeCenter;
-    GLuint FullscreenQuad;
-} Vaos;
-
-static struct {
-    GLuint Vao;
-    int IndexCount;
-} ImpulseModel;
-
 typedef struct PezConfigRec
 {
     const char* Title;
@@ -86,9 +52,3 @@ PezConfig PezGetConfig();
 void PezInitialize(GLFWwindow* window);
 void PezUpdate(GLFWwindow* window, long long dt);
 void PezRender();
-
-extern const float ImpulseTemperature;
-extern const float ImpulseDensity;
-extern const float TemperatureDissipation;
-extern const float VelocityDissipation;
-extern const float DensityDissipation;

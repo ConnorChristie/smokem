@@ -84,7 +84,7 @@ void Shape::shapeInit(GLuint programID, tinyobj::shape_t shape, tinyobj::materia
     assert(checkError());
 }
 
-void Shape::render(GLuint programID, bool ignoreChecks)
+void Shape::render(GLuint programID)
 {
     glUseProgram(programID);
 

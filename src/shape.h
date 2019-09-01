@@ -29,7 +29,7 @@ public:
 
     ~Shape();
 
-    void render(GLuint programID, bool ignoreChecks = false);
+    void render(GLuint programID);
 
     unsigned int getVerticesSize() const { return mVerticesSize; };
     unsigned int getIndicesSize() const { return mIndicesSize; };

@@ -8,24 +8,30 @@
 class Camera
 {
 public:
-    Camera(int width, int height);
+    Camera(int width, int height, glm::vec3 initialPosition);
 
     void update(GLFWwindow* window, long long deltaTime);
 
-    glm::mat4 getView();
-    glm::mat4 getProjection();
+    glm::mat4 getViewMatrix() const { return viewMatrix; };
+    glm::mat4 getProjectionMatrix() const { return projectionMatrix; };
+
+    glm::vec3 getPosition() const { return cameraPos; };
+    void setPosition(glm::vec3 position);
+
+    float getYaw() const { return yaw; };
+    float getPitch() const { return pitch; };
 
 private:
-    glm::mat4 projection;
+    glm::mat4 viewMatrix;
+    glm::mat4 projectionMatrix;
 
-    glm::vec3 cameraPos   = glm::vec3(3, 0, 2);
+    glm::vec3 cameraPos;
     glm::vec3 cameraFront = glm::vec3(1, 0, 0);
     glm::vec3 cameraUp    = glm::vec3(0, 1, 0);
 
     int mWidth, mHeight;
 
     float fov = 45;
-
     float yaw = 0;
     float pitch = 0;
 

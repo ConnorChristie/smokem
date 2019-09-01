@@ -1,7 +1,7 @@
 #include "camera.h"
 
-Camera::Camera(int width, int height)
-    : mWidth(width), mHeight(height)
+Camera::Camera(int width, int height, glm::vec3 initialPosition)
+    : mWidth(width), mHeight(height), cameraPos(initialPosition)
 {
 }
 
@@ -60,14 +60,12 @@ void Camera::update(GLFWwindow* window, long long deltaTime)
         lastX = -1;
         lastY = -1;
     }
+
+    viewMatrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    projectionMatrix = glm::infinitePerspective(glm::radians(fov), float(mWidth) / float(mHeight), 1.0f);
 }
 
-glm::mat4 Camera::getView()
+void Camera::setPosition(glm::vec3 position)
 {
-    return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-}
-
-glm::mat4 Camera::getProjection()
-{
-    return glm::infinitePerspective(glm::radians(fov), float(mWidth) / float(mHeight), 1.0f);
+    cameraPos = position;
 }
