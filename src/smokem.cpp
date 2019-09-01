@@ -1,4 +1,4 @@
-#include "fluid.h"
+#include "smokem.h"
 
 using namespace vmath;
 using std::string;
@@ -9,20 +9,9 @@ static Camera* camera;
 static std::vector<Object*> objects;
 static std::vector<Light> lights;
 
-PezConfig PezGetConfig()
+void Smokem::initialize(GLFWwindow* window)
 {
-    PezConfig config;
-    config.Title = "Fluid3d";
-    config.Width = 1920;
-    config.Height = 1080;
-    config.Multisampling = 4;
-    config.VerticalSync = 1;
-    return config;
-}
-
-void PezInitialize(GLFWwindow* window)
-{
-    PezConfig cfg = PezGetConfig();
+    Config cfg = getConfig();
 
     camera = new Camera(cfg.Width, cfg.Height, glm::vec3(-70, 35, 70));
 
@@ -33,11 +22,6 @@ void PezInitialize(GLFWwindow* window)
 
     assert(checkError());
 
-    //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\torch\\torch.obj", glm::vec3(0), glm::vec3(2, 0, 5), 2.0f);
-    //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\shuttle\\space-shuttle-orbiter.obj", glm::vec3(0), glm::vec3(0, 0, 8), 0.1f);
-    //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\standard-male\\standard-male-figure.obj", glm::vec3(0), glm::vec3(0, 0, 8), 0.1f);
-    //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\tenryuu\\light-cruiser-tenryuu.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 5), 1.5f);
-    //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\revil\\resident-evil-racoon-city-party-girl.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 5), 1.0f);
     objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\blender\\untitled.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 0), 1.0f));
     objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\sonic\\sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(-30, 1, 0), 0.3f));
     objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\medieval-house\\medieval-house-2.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(10, 4.5f, 0), 3.0f));
@@ -62,19 +46,15 @@ void PezInitialize(GLFWwindow* window)
     ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
-void PezUpdate(GLFWwindow* window, long long dt)
+void Smokem::update(GLFWwindow* window, long long dt)
 {
     assert(checkError());
-    PezConfig cfg = PezGetConfig();
+    Config cfg = getConfig();
 
     camera->update(window, dt);
 
     glm::mat4 viewMatrix = camera->getViewMatrix();
     glm::mat4 projectionMatrix = camera->getProjectionMatrix();
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, cfg.Width, cfg.Height);
-    glClearColor(0, 0, 0, 1);
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> ambients;
@@ -84,11 +64,11 @@ void PezUpdate(GLFWwindow* window, long long dt)
 
     for (int i = 0; i < lights.size(); i++)
     {
-        positions.push_back(lights.at(i).mPosition);
-        ambients.push_back(lights.at(i).mAmbient);
-        diffuses.push_back(lights.at(i).mDiffuse);
-        speculars.push_back(lights.at(i).mSpecular);
-        brightnesses.push_back(lights.at(i).mBrightness);
+        positions.push_back(lights.at(i).position);
+        ambients.push_back(lights.at(i).ambient);
+        diffuses.push_back(lights.at(i).diffuse);
+        speculars.push_back(lights.at(i).specular);
+        brightnesses.push_back(lights.at(i).brightness);
     }
 
     glUseProgram(ModelProgram->id());
@@ -110,7 +90,13 @@ void PezUpdate(GLFWwindow* window, long long dt)
     }
 
     glEnable(GL_DEPTH_TEST);
+    assert(checkError());
 
+    updateGui();
+}
+
+void Smokem::updateGui()
+{
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -165,19 +151,21 @@ void PezUpdate(GLFWwindow* window, long long dt)
     }
 
     //ImGui::ShowDemoWindow((bool*)true);
-
-    assert(checkError());
 }
 
-void PezRender()
+void Smokem::render()
 {
     assert(checkError());
-    PezConfig cfg = PezGetConfig();
+    Config cfg = getConfig();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, cfg.Width, cfg.Height);
+    glClearColor(0, 0, 0, 1);
 
     Program* p = ModelProgram;
     glUseProgram(p->id());
 
-    for (const auto obj : objects)
+    for (const auto &obj : objects)
     {
         glm::mat3 normMtx = glm::transpose(glm::inverse(glm::mat3(obj->getModelMatrix() * camera->getViewMatrix())));
         glUniformMatrix3fv(glGetUniformLocation(p->id(), "normal_matrix"), 1, false, glm::value_ptr(normMtx));

@@ -30,25 +30,35 @@ using std::string;
 
 typedef std::chrono::duration<double, std::ratio<1, 1000000>> us;
 
-typedef struct PezConfigRec
+typedef struct Config
 {
     const char* Title;
     int Width;
     int Height;
-    bool Multisampling;
-    bool VerticalSync;
-} PezConfig;
+} Config;
 
 typedef struct Light
 {
-    glm::vec3 mPosition; // position of the light in the world space.
-    glm::vec3 mAmbient; // ambient light
-    glm::vec3 mDiffuse; // diffuse light
-    glm::vec3 mSpecular; // specular light
-    float mBrightness;
+    glm::vec3 position;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    float brightness;
 } Light;
 
-PezConfig PezGetConfig();
-void PezInitialize(GLFWwindow* window);
-void PezUpdate(GLFWwindow* window, long long dt);
-void PezRender();
+class Smokem
+{
+public:
+    void initialize(GLFWwindow* window);
+    void update(GLFWwindow* window, long long dt);
+    void updateGui();
+    void render();
+
+    Config getConfig() const { return config; };
+
+private:
+    Config config = {
+        "Smokem",
+        1920, 1080
+    };
+};
