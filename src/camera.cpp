@@ -7,7 +7,7 @@ Camera::Camera(int width, int height)
 
 void Camera::update(GLFWwindow* window, long long deltaTime)
 {
-    float cameraSpeed = 0.5f;
+    float cameraSpeed = 1.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;

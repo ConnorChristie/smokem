@@ -25,30 +25,18 @@ constexpr auto TEXCOORDS_BUF_POS = 3; // position of texcoord data in the buffer
 
 class Shape {
 public:
-    /* Only Shape constructor.
-     * @param	programID	the ID of the program to which the data will be buffered.
-     * @param	shape		The shape data, in the form specified in the tinyobj library.
-     * @param	material	The material data, in the form specified in the tiny obj library.
-     * @param	directory	The directory where shape & material data can be found, relative to the directory in which this executable was called.
-     */
     Shape(GLuint programID, tinyobj::shape_t shape, tinyobj::material_t material, std::string directory);
 
-    /* Basic Shape destructor. */
     ~Shape();
 
-    /* Render the shape and its associated texture data.
-     * @param	programID	The ID of the program to which the data will be buffered.
-     */
     void render(GLuint programID, bool ignoreChecks = false);
 
-    /* Accessors for data sizes */
-    unsigned int getVerticesSize() const;
-    unsigned int getIndicesSize() const;
-    unsigned int getNormalsSize() const;
-    unsigned int getTexCoordsSize() const;
+    unsigned int getVerticesSize() const { return mVerticesSize; };
+    unsigned int getIndicesSize() const { return mIndicesSize; };
+    unsigned int getNormalsSize() const { return mNormalsSize; };
+    unsigned int getTexCoordsSize() const { return mTexCoordsSize; };
 
 private:
-    /* We keep this constructor private since it's of no use to an external user. */
     Shape();
 
     /* The function that actually initialises the shape data.
@@ -66,25 +54,22 @@ private:
      */
     unsigned int generateTexture(const char* filename, const unsigned int texCount);
 
-    static const unsigned int mBufSize = 4; // size of the buffer
-    GLuint mBuffer[mBufSize]; // the buffer
+    static const unsigned int mBufSize = 4;
     
-    /* surface lighting data */
     float mAmbient[VALS_PER_MTL_SURFACE];
     float mDiffuse[VALS_PER_MTL_SURFACE];
     float mSpecular[VALS_PER_MTL_SURFACE];
     float mEmission[VALS_PER_MTL_SURFACE];
     float mShininess;
 
-    /* Sizes of buffered data */
     unsigned int mVerticesSize;
     unsigned int mIndicesSize;
     unsigned int mNormalsSize;
     unsigned int mTexCoordsSize;
 
-    unsigned int mVertexVaoHandle; // VAO handle for vertices
-    unsigned int mTextureHandle; // handle for the texture data
-    unsigned int mTextureNormHandle; // handle for the bumpmap data for the texture
+    unsigned int mVertexVaoHandle;
+    unsigned int mTextureHandle;
+    unsigned int mTextureNormHandle;
 };
 
 #endif

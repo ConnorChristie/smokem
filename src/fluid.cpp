@@ -4,7 +4,6 @@ using namespace vmath;
 using std::string;
 
 static Program* ModelProgram;
-static Program* TextProgram;
 static Camera* camera;
 
 static std::vector<Object*> objects;
@@ -32,11 +31,6 @@ void PezInitialize(GLFWwindow* window)
         Shader(GL_FRAGMENT_SHADER, "shaders/model.frag")
     });
 
-    TextProgram = new Program({
-        Shader(GL_VERTEX_SHADER, "shaders/text/text.vert"),
-        Shader(GL_FRAGMENT_SHADER, "shaders/text/text.frag")
-    });
-
     assert(checkError());
 
     glGenVertexArrays(1, &Vaos.CubeCenter);
@@ -56,11 +50,13 @@ void PezInitialize(GLFWwindow* window)
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\standard-male\\standard-male-figure.obj", glm::vec3(0), glm::vec3(0, 0, 8), 0.1f);
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\tenryuu\\light-cruiser-tenryuu.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 5), 1.5f);
     //obj = new Object(ModelProgram, "D:\\Git\\opengl-tutorial\\models\\revil\\resident-evil-racoon-city-party-girl.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 5), 1.0f);
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\sonic\\sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 5, 0), 0.3f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\blender\\untitled.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, -10, 0), 1.0f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\blender\\untitled.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 0), 1.0f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\sonic\\sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(-27, -13, 0), 0.3f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\medieval-house\\medieval-house-2.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(10, 1.5f, 0), 3.0f));
+    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\shuttle\\space-shuttle-orbiter.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(42, -48, 280), 0.04f));
 
     lights.push_back({
-        glm::vec3(0, 100, 0), // position of the light in the world space.
+        glm::vec3(20, 100, 50), // position of the light in the world space.
         glm::vec3(0.1f), // ambient light
         glm::vec3(0.09f), // diffuse light
         glm::vec3(0.04f), // specular light
@@ -132,10 +128,40 @@ void PezUpdate(GLFWwindow* window, long long dt)
     ImGui::NewFrame();
 
     {
-        ImGui::Begin("FPS");
+        ImGui::Begin("Smokem");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+        if (ImGui::CollapsingHeader("Objects"))
+        {
+            for (auto i = 0; i < objects.size(); i++)
+            {
+                std::string objName = "Object" + std::to_string(i);
+
+                if (ImGui::TreeNode(objName.c_str()))
+                {
+                    glm::vec3 pos = objects.at(i)->getTranslation();
+                    //float x = pos.x, y = pos.y, z = pos.z;
+
+                    ImGui::PushItemWidth(100);
+                    bool changed = ImGui::DragFloat("X", &pos.x, 0.2f, NULL, NULL); ImGui::SameLine();
+                    changed = changed || ImGui::DragFloat("Y", &pos.y, 0.2f, NULL, NULL); ImGui::SameLine();
+                    changed = changed || ImGui::DragFloat("Z", &pos.z, 0.2f, NULL, NULL);
+                    ImGui::PopItemWidth();
+
+                    if (changed)
+                    {
+                        objects.at(i)->setTranslation(pos);
+                    }
+
+                    ImGui::TreePop();
+                }
+            }
+        }
+
         ImGui::End();
     }
+
+    //ImGui::ShowDemoWindow((bool*)true);
 
     assert(checkError());
 }
