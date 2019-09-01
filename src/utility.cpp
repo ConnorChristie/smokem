@@ -15,7 +15,7 @@ const float CellSize = 1.25f;
 const int GridWidth = 128;
 const int GridHeight = 128;
 const int GridDepth = 128;
-const float SplatRadius = 16.0f;
+const float SplatRadius = 8.0f;
 const float AmbientTemperature = 0.0f;
 const int NumJacobiIterations = 40;
 const float TimeStep = 0.25f;
@@ -28,15 +28,11 @@ const Vector3 ImpulsePosition(GridWidth / 2.0f, GridHeight - (int) SplatRadius /
 GLuint makeProgram(std::initializer_list<Shader> shaders)
 {
     GLuint program = glCreateProgram();
-
-    if (program == 0)
-    {
-        return 0;
-    }
+    if (program == 0) return 0;
 
     for (auto it = shaders.begin(); it != shaders.end(); ++it)
     {
-        glAttachShader(program, it->getHandle());
+        glAttachShader(program, it->id());
     }
 
     glLinkProgram(program);
@@ -56,6 +52,43 @@ GLuint makeProgram(std::initializer_list<Shader> shaders)
     glBindAttribLocation(program, SlotTexCoord, "TexCoord");
     glBindAttribLocation(program, SlotNormal, "Normal");
     glLinkProgram(program);
+
+    GLchar compilerSpew[256];
+    GLint linkSuccess;
+    glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
+    glGetProgramInfoLog(program, sizeof(compilerSpew), 0, compilerSpew);
+
+    if (!linkSuccess)
+    {
+        printf("Link error.\n");
+        printf("%s\n", compilerSpew);
+    }
+
+    return program;
+}
+
+GLuint makeRawProgram(std::initializer_list<Shader> shaders)
+{
+    GLuint program = glCreateProgram();
+    if (program == 0) return 0;
+
+    for (auto it = shaders.begin(); it != shaders.end(); ++it)
+    {
+        glAttachShader(program, it->id());
+    }
+
+    glLinkProgram(program);
+
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        GLint infoLogLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+        std::unique_ptr<GLchar[]> strInfoLog(new GLchar[infoLogLength]);
+        glGetProgramInfoLog(program, infoLogLength, nullptr, strInfoLog.get());
+    }
 
     GLchar compilerSpew[256];
     GLint linkSuccess;
@@ -405,16 +438,25 @@ void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod des
     ResetState();
 }
 
-void ApplyImpulse(SurfacePod dest, Vector3 position, float value)
+void ApplyImpulse(Matrix4 modelViewProjection, SurfacePod dest, Vector3 position, float value, int indexCount)
 {
     glUseProgram(Programs.ApplyImpulse);
-    SetUniform("Point", position);
-    SetUniform("Radius", SplatRadius);
+    SetUniform("ModelviewProjection", modelViewProjection);
     SetUniform("Intensity", Vector3(value));
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glEnable(GL_BLEND);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, dest.Depth);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+    ResetState();
+}
+
+void DrawModel(Matrix4 modelViewProjection, int indexCount)
+{
+    glUseProgram(Programs.ApplyImpulse);
+    SetUniform("ModelviewProjection", modelViewProjection);
+    SetUniform("Intensity", Vector3(1));
+
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
     ResetState();
 }
 

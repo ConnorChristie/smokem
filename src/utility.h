@@ -37,6 +37,7 @@ struct SlabPod {
 };
 
 GLuint makeProgram(std::initializer_list<Shader> shaders);
+GLuint makeRawProgram(std::initializer_list<Shader> shaders);
 
 GLuint CreatePointVbo(float x, float y, float z);
 GLuint CreateQuadVbo();
@@ -52,8 +53,9 @@ void Advect(SurfacePod velocity, SurfacePod source, SurfacePod obstacles, Surfac
 void Jacobi(SurfacePod pressure, SurfacePod divergence, SurfacePod obstacles, SurfacePod dest);
 void SubtractGradient(SurfacePod velocity, SurfacePod pressure, SurfacePod obstacles, SurfacePod dest);
 void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod dest);
-void ApplyImpulse(SurfacePod dest, vmath::Vector3 position, float value);
+void ApplyImpulse(vmath::Matrix4 modelViewProjection, SurfacePod dest, vmath::Vector3 position, float value, int indexCount);
 void ApplyBuoyancy(SurfacePod velocity, SurfacePod temperature, SurfacePod density, SurfacePod dest);
+void DrawModel(vmath::Matrix4 modelViewProjection, int indexCount);
 
 void SetUniform(const char* name, int value);
 void SetUniform(const char* name, float value);

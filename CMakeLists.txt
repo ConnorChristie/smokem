@@ -126,6 +126,7 @@ endif()
 file (GLOB MAIN_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc
      )
 
 file (GLOB MAIN_HEADERS
@@ -140,4 +141,4 @@ source_group("include" FILES ${MAIN_HEADERS})
 link_directories(${LIB_FOLDER})
 
 add_executable(${TARGET_NAME} ${MAIN_SRC} ${MAIN_HEADERS})
-target_link_libraries(${TARGET_NAME} glm glfw glad)
+target_link_libraries(${TARGET_NAME} glm glfw glad imgui)

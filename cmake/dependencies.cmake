@@ -119,3 +119,5 @@ else(NOT OGLTUTOR_SYSTEM_GLAD)
   message(FATAL_ERROR "Using system Glad is not supported yet")
 
 endif(NOT OGLTUTOR_SYSTEM_GLAD)
+
+include(cmake/imgui.cmake)

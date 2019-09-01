@@ -12,17 +12,11 @@ uniform vec3 lightDiffuses[numberOfLights]; // diffuse values for each light sou
 uniform vec3 lightSpeculars[numberOfLights]; // specular values for each light source
 uniform float lightBrightnesses[numberOfLights]; // brightnesses of each light.
 
-uniform vec3 mtl_ambient; // ambient material value
-uniform vec3 mtl_diffuse; // diffuse material value
-uniform vec3 mtl_specular; // specular material value
-uniform vec3 mtl_emission; // emission colour for the material
+uniform float mtl_ambient; // ambient material value
+uniform float mtl_diffuse; // diffuse material value
+uniform float mtl_specular; // specular material value
+uniform float mtl_emission; // emission colour for the material
 uniform float mtl_shininess; // shininess of the material
-
-uniform int texture_code;
-uniform int program_time;
-
-uniform sampler2D tex_map;
-uniform sampler2D tex_norm;
 
 in mat4 lightPosMatrix;
 in vec4 vertex;
@@ -75,17 +69,17 @@ vec3 phongLight(in vec4 position, in vec3 norm, in vec4 light_pos, in vec3 light
 
 void main()
 {
-    fragColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    fragColor = vec4(0.8f, 0.1f, 0.0f, 1.0f);
 
     // Normal Map
-    vec3 NN = texture(tex_norm, texCoord.st).xyz;
-    vec3 N = normal + normalize(2.0 * NN.xyz - 1.0);
+    // vec3 NN = texture(tex_norm, texCoord.st).xyz;
+    // vec3 N = normal + normalize(2.0 * NN.xyz - 1.0);
 
     for (int i = 0; i < numberOfLights; i++)
     {
         fragColor.xyz += phongLight(
             vertex,
-            normalize(N),
+            normalize(normal),
             lightPosMatrix * vec4(lightPositions[i], 1.0),
             lightAmbients[i],
             lightDiffuses[i],
@@ -94,5 +88,5 @@ void main()
         );
     }
 
-    fragColor = vec4(fragColor.xyz + mtl_emission.xyz, 1.0f) * texture(tex_map, texCoord);
+    fragColor = vec4(fragColor.xyz + mtl_emission, 1.0f);
 }

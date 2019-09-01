@@ -1,28 +1,26 @@
 #include "shader.h"
-#include <fstream>
-#include <cerrno>
-#include <sstream>
-#include <memory>
 
-GLuint loadShader(GLenum shaderType, const std::string &filename)
+Shader::Shader(GLenum shaderType, const std::string& filename)
+    : mHandle(loadShader(shaderType, filename))
+{
+}
+
+Shader::~Shader()
+{
+    if (mHandle > 0) glDeleteShader(mHandle);
+}
+
+GLuint Shader::loadShader(GLenum shaderType, const std::string& filename)
 {
     std::ifstream shaderFile(filename);
+    if (!shaderFile.is_open()) return 0;
 
-    if (!shaderFile.is_open())
-    {
-        return 0;
-    }
+    std::string shaderText(static_cast<const std::stringstream&>(std::stringstream() << shaderFile.rdbuf()).str());
 
-    std::string shaderText(static_cast<const std::stringstream &>(std::stringstream() << shaderFile.rdbuf()).str());
+    auto shader = glCreateShader(shaderType);
+    if (shader == 0) return 0;
 
-    GLuint shader = glCreateShader(shaderType);
-    if (shader == 0)
-    {
-        return 0;
-    }
-
-    // For some reason I can't get &shaderText.c_str() to work...
-    const char *shaderTextCstr = shaderText.c_str();
+    const char* shaderTextCstr = shaderText.c_str();
     glShaderSource(shader, 1, &shaderTextCstr, nullptr);
     glCompileShader(shader);
 
@@ -35,34 +33,61 @@ GLuint loadShader(GLenum shaderType, const std::string &filename)
 
         std::unique_ptr<GLchar[]> strInfoLog(new GLchar[infoLogLength]);
         glGetShaderInfoLog(shader, infoLogLength, nullptr, strInfoLog.get());
-        printf("Shader compile error: %s", strInfoLog.get());
+        printf("Shader compile error: %s\n", strInfoLog.get());
 
-        std::string strShaderType;
-        switch (shaderType)
-        {
-        case GL_VERTEX_SHADER:
-            strShaderType = "vertex";
-            break;
-        case GL_GEOMETRY_SHADER:
-            strShaderType = "geometry";
-            break;
-        case GL_FRAGMENT_SHADER:
-            strShaderType = "fragment";
-            break;
-        }
+        exit(1);
     }
 
     return shader;
 }
 
-Shader::Shader(GLenum shaderType, const std::string &filename) : mHandle(loadShader(shaderType, filename))
+
+
+Program::Program(std::initializer_list<Shader> shaders)
+    : mHandle(loadProgram(shaders))
 {
 }
 
-Shader::~Shader()
+Program::~Program()
 {
-    if (mHandle > 0)
+    if (mHandle > 0) glDeleteProgram(mHandle);
+}
+
+GLuint Program::loadProgram(std::initializer_list<Shader> shaders)
+{
+    mShaders = shaders;
+
+    auto program = glCreateProgram();
+    if (program == 0) return 0;
+
+    for (auto it = shaders.begin(); it != shaders.end(); ++it)
     {
-        glDeleteShader(mHandle);
+        glAttachShader(program, it->id());
     }
+
+    glLinkProgram(program);
+
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        GLint infoLogLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+        std::unique_ptr<GLchar[]> strInfoLog(new GLchar[infoLogLength]);
+        glGetProgramInfoLog(program, infoLogLength, nullptr, strInfoLog.get());
+    }
+
+    GLchar compilerSpew[256];
+    GLint linkSuccess;
+    glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
+    glGetProgramInfoLog(program, sizeof(compilerSpew), 0, compilerSpew);
+
+    if (!linkSuccess)
+    {
+        printf("Link error.\n");
+        printf("%s\n", compilerSpew);
+    }
+
+    return program;
 }

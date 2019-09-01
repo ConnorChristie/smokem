@@ -1,17 +1,25 @@
 #version 400
 
-layout (location = 0) in vec3 Position;
-layout (location = 1) in vec2 TexCoord;
-// layout (location = 2) in vec3 Normal;
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+uniform mat3 normal_matrix;
 
-uniform mat4 ModelviewProjection;
+in vec3 a_vertex;
+in vec3 a_normal;
+in vec2 a_tex_coord;
 
-out vec2 vTexCoord;
-out vec3 vNormal;
+out mat4 lightPosMatrix;
+out vec4 vertex;
+out vec3 normal;
+out vec2 texCoord;
 
 void main()
 {
-    gl_Position = ModelviewProjection * vec4(Position - vec3(0, 0, 0), 1);
-    vTexCoord = TexCoord;
-    vNormal = vec3(0);
+    lightPosMatrix = view_matrix;
+    texCoord = a_tex_coord;
+    normal = normalize(normal_matrix * a_normal);
+
+    vertex = view_matrix * model_matrix * vec4(a_vertex, 1.0f);
+    gl_Position = projection_matrix * vertex;
 }
