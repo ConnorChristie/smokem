@@ -21,11 +21,9 @@
 #include "object.h"
 #include "shader.h"
 #include "utility.h"
-#include "vmath.hpp"
 
 constexpr auto Pi = (3.14159265f);
 
-using namespace vmath;
 using std::string;
 
 typedef std::chrono::duration<double, std::ratio<1, 1000000>> us;
@@ -53,6 +51,10 @@ public:
     void update(GLFWwindow* window, long long dt);
     void updateGui();
     void render();
+    void exit();
+
+    void updateSmoke(long long dt);
+    void renderSmoke();
 
     Config getConfig() const { return config; };
 
@@ -61,4 +63,12 @@ private:
         "Smokem",
         1920, 1080
     };
+
+    void initSmoke();
 };
+
+const float ImpulseTemperature = 10.0f;
+const float ImpulseDensity = 1.25f;
+const float TemperatureDissipation = 0.99f;
+const float VelocityDissipation = 0.99f;
+const float DensityDissipation = 0.999f;

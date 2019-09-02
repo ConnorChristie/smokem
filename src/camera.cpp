@@ -7,7 +7,7 @@ Camera::Camera(int width, int height, glm::vec3 initialPosition)
 
 void Camera::update(GLFWwindow* window, long long deltaTime)
 {
-    float cameraSpeed = 1.0f;
+    float cameraSpeed = 0.2f; //1.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
@@ -65,7 +65,7 @@ void Camera::update(GLFWwindow* window, long long deltaTime)
     projectionMatrix = glm::infinitePerspective(glm::radians(fov), float(mWidth) / float(mHeight), 1.0f);
 }
 
-void Camera::setPosition(glm::vec3 position)
+void Camera::setTranslation(glm::vec3 position)
 {
     cameraPos = position;
 }

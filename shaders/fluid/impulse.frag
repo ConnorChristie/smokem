@@ -4,20 +4,18 @@ out vec4 FragColor;
 
 uniform vec3 Point;
 uniform float Radius;
-uniform vec3 Intensity;
+uniform vec3 FillColor;
 
 in float gLayer;
 
 void main()
 {
-    float d = distance(Point.xy, gl_FragCoord.xy);
-    float impulse = 0;
-
-    if (d < Radius && gLayer > Radius + 20 && gLayer < Radius + 25)
-    {
+    float d = distance(Point, vec3(gl_FragCoord.xy, gLayer));
+    if (d < Radius) {
         float a = (Radius - d) * 0.5;
-        impulse = min(a, 1.0);
+        a = min(a, 1.0);
+        FragColor = vec4(FillColor, a);
+    } else {
+        FragColor = vec4(0);
     }
-
-    FragColor = vec4(Intensity, impulse);
 }

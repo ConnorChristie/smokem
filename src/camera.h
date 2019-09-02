@@ -15,9 +15,10 @@ public:
     glm::mat4 getViewMatrix() const { return viewMatrix; };
     glm::mat4 getProjectionMatrix() const { return projectionMatrix; };
 
-    glm::vec3 getPosition() const { return cameraPos; };
-    void setPosition(glm::vec3 position);
+    glm::vec3 getTranslation() const { return cameraPos; };
+    void setTranslation(glm::vec3 position);
 
+    float getFov() const { return fov; };
     float getYaw() const { return yaw; };
     float getPitch() const { return pitch; };
 

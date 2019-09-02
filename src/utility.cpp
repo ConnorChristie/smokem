@@ -1,7 +1,5 @@
 #include "utility.h"
 
-using namespace vmath;
-
 static struct {
     GLuint Advect;
     GLuint Jacobi;
@@ -12,9 +10,9 @@ static struct {
 } Programs;
 
 const float CellSize = 1.25f;
-const int GridWidth = 128;
-const int GridHeight = 128;
-const int GridDepth = 128;
+const int GridWidth = 64;
+const int GridHeight = 64;
+const int GridDepth = 64;
 const float SplatRadius = 8.0f;
 const float AmbientTemperature = 0.0f;
 const int NumJacobiIterations = 40;
@@ -23,7 +21,7 @@ const float SmokeBuoyancy = 1.0f;
 const float SmokeWeight = 0.0f;
 const float GradientScale = 1.125f / CellSize;
 
-const Vector3 ImpulsePosition(GridWidth / 2.0f, GridHeight - (int) SplatRadius / 2.0f, GridDepth / 2.0f);
+const glm::vec3 ImpulsePosition(GridWidth / 2.0f, GridHeight - (int) SplatRadius / 2.0f, GridDepth / 2.0f);
 
 GLuint makeProgram(std::initializer_list<Shader> shaders)
 {
@@ -48,47 +46,7 @@ GLuint makeProgram(std::initializer_list<Shader> shaders)
         glGetProgramInfoLog(program, infoLogLength, nullptr, strInfoLog.get());
     }
 
-    glBindAttribLocation(program, SlotPosition, "Position");
-    glBindAttribLocation(program, SlotTexCoord, "TexCoord");
-    glBindAttribLocation(program, SlotNormal, "Normal");
     glLinkProgram(program);
-
-    GLchar compilerSpew[256];
-    GLint linkSuccess;
-    glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
-    glGetProgramInfoLog(program, sizeof(compilerSpew), 0, compilerSpew);
-
-    if (!linkSuccess)
-    {
-        printf("Link error.\n");
-        printf("%s\n", compilerSpew);
-    }
-
-    return program;
-}
-
-GLuint makeRawProgram(std::initializer_list<Shader> shaders)
-{
-    GLuint program = glCreateProgram();
-    if (program == 0) return 0;
-
-    for (auto it = shaders.begin(); it != shaders.end(); ++it)
-    {
-        glAttachShader(program, it->id());
-    }
-
-    glLinkProgram(program);
-
-    GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status == GL_FALSE)
-    {
-        GLint infoLogLength;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-
-        std::unique_ptr<GLchar[]> strInfoLog(new GLchar[infoLogLength]);
-        glGetProgramInfoLog(program, infoLogLength, nullptr, strInfoLog.get());
-    }
 
     GLchar compilerSpew[256];
     GLint linkSuccess;
@@ -169,7 +127,9 @@ void CreateObstacles(SurfacePod dest)
 
     GLuint circleVbo;
     glGenBuffers(1, &circleVbo);
-    glEnableVertexAttribArray(SlotPosition);
+
+    auto posAttr = glGetAttribLocation(program, "Position");
+    glEnableVertexAttribArray(posAttr);
 
     assert(checkError());
 
@@ -199,7 +159,7 @@ void CreateObstacles(SurfacePod dest)
             glBufferData(GL_ARRAY_BUFFER, size, positions, GL_STATIC_DRAW);
 
             GLsizeiptr stride = 2 * sizeof(positions[0]);
-            glVertexAttribPointer(SlotPosition, 2, GL_FLOAT, GL_FALSE, stride, 0);
+            glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, stride, 0);
             glDrawArrays(GL_LINE_STRIP, 0, 5);
         }
 
@@ -231,7 +191,7 @@ void CreateObstacles(SurfacePod dest)
             glBufferData(GL_ARRAY_BUFFER, size, positions, GL_STATIC_DRAW);
 
             GLsizeiptr stride = 2 * sizeof(positions[0]);
-            glVertexAttribPointer(SlotPosition, 2, GL_FLOAT, GL_FALSE, stride, 0);
+            glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, stride, 0);
             glDrawArrays(GL_TRIANGLES, 0, slices * 3);
         }
     }
@@ -363,7 +323,7 @@ GLuint CreateQuadVbo()
 void Advect(SurfacePod velocity, SurfacePod source, SurfacePod obstacles, SurfacePod dest, float dissipation)
 {
     glUseProgram(Programs.Advect);
-    SetUniform("InverseSize", recipPerElem(Vector3(float(GridWidth), float(GridHeight), float(GridDepth))));
+    SetUniform("InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
     SetUniform("TimeStep", TimeStep);
     SetUniform("Dissipation", dissipation);
     SetUniform("VelocityTexture", 0);
@@ -438,25 +398,16 @@ void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod des
     ResetState();
 }
 
-void ApplyImpulse(Matrix4 modelViewProjection, SurfacePod dest, Vector3 position, float value, int indexCount)
+void ApplyImpulse(SurfacePod dest, glm::vec3 position, float value)
 {
     glUseProgram(Programs.ApplyImpulse);
-    SetUniform("ModelviewProjection", modelViewProjection);
-    SetUniform("Intensity", Vector3(value));
+    SetUniform("Point", position);
+    SetUniform("Radius", SplatRadius);
+    SetUniform("FillColor", glm::vec3(value));
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glEnable(GL_BLEND);
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-    ResetState();
-}
-
-void DrawModel(Matrix4 modelViewProjection, int indexCount)
-{
-    glUseProgram(Programs.ApplyImpulse);
-    SetUniform("ModelviewProjection", modelViewProjection);
-    SetUniform("Intensity", Vector3(1));
-
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, dest.Depth);
     ResetState();
 }
 
@@ -531,32 +482,32 @@ void SetUniform(const char* name, float value)
     glUniform1f(location, value);
 }
 
-void SetUniform(const char* name, Matrix4 value)
+void SetUniform(const char* name, glm::mat4 value)
 {
     GLuint program;
     glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
     GLint location = glGetUniformLocation(program, name);
-    glUniformMatrix4fv(location, 1, 0, (float*)& value);
+    glUniformMatrix4fv(location, 1, 0, glm::value_ptr(value));
 }
 
-void SetUniform(const char* name, Matrix3 nm)
+void SetUniform(const char* name, glm::mat3 nm)
 {
     GLuint program;
     glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
     GLint location = glGetUniformLocation(program, name);
     float packed[9] = {
-        nm.getRow(0).getX(), nm.getRow(1).getX(), nm.getRow(2).getX(),
-        nm.getRow(0).getY(), nm.getRow(1).getY(), nm.getRow(2).getY(),
-        nm.getRow(0).getZ(), nm.getRow(1).getZ(), nm.getRow(2).getZ() };
+        nm[0].x, nm[1].x, nm[2].x,
+        nm[0].y, nm[1].y, nm[2].y,
+        nm[0].z, nm[1].z, nm[2].z };
     glUniformMatrix3fv(location, 1, 0, &packed[0]);
 }
 
-void SetUniform(const char* name, Vector3 value)
+void SetUniform(const char* name, glm::vec3 value)
 {
     GLuint program;
     glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
     GLint location = glGetUniformLocation(program, name);
-    glUniform3f(location, value.getX(), value.getY(), value.getZ());
+    glUniform3f(location, value.x, value.y, value.z);
 }
 
 void SetUniform(const char* name, float x, float y)
@@ -567,20 +518,12 @@ void SetUniform(const char* name, float x, float y)
     glUniform2f(location, x, y);
 }
 
-void SetUniform(const char* name, Vector4 value)
+void SetUniform(const char* name, glm::vec4 value)
 {
     GLuint program;
     glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
     GLint location = glGetUniformLocation(program, name);
-    glUniform4f(location, value.getX(), value.getY(), value.getZ(), value.getW());
-}
-
-void SetUniform(const char* name, Point3 value)
-{
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
-    glUniform3f(location, value.getX(), value.getY(), value.getZ());
+    glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
 bool checkError()

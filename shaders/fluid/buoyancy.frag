@@ -1,11 +1,9 @@
 #version 400
 
 out vec3 FragColor;
-
 uniform sampler3D Velocity;
 uniform sampler3D Temperature;
 uniform sampler3D Density;
-
 uniform float AmbientTemperature;
 uniform float TimeStep;
 uniform float Sigma;
@@ -21,9 +19,8 @@ void main()
 
     FragColor = V;
 
-    if (T > AmbientTemperature)
-    {
+    if (T > AmbientTemperature) {
         float D = texelFetch(Density, TC, 0).x;
-        FragColor += (TimeStep * (T - AmbientTemperature) * Sigma - D * Kappa) * vec3(0, -1, 0);
+        FragColor += (TimeStep * (T - AmbientTemperature) * Sigma - D * Kappa ) * vec3(0, -1, 0);
     }
 }

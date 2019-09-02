@@ -60,14 +60,14 @@ void Object::calcModelMatrix()
     }
 }
 
-void Object::render(GLuint programID)
+void Object::render(GLuint programID, bool useMaterial)
 {
     glUseProgram(programID);
     glUniformMatrix4fv(glGetUniformLocation(programID, "model_matrix"), 1, false, glm::value_ptr(getModelMatrix()));
 
     for (int i = 0; i < mShapes.size(); i++)
     {
-        mShapes.at(i).render(programID);
+        mShapes.at(i).render(programID, useMaterial);
     }
 }
 

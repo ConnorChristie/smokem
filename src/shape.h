@@ -29,7 +29,7 @@ public:
 
     ~Shape();
 
-    void render(GLuint programID);
+    void render(GLuint programID, bool useMaterial);
 
     unsigned int getVerticesSize() const { return mVerticesSize; };
     unsigned int getIndicesSize() const { return mIndicesSize; };
@@ -55,7 +55,7 @@ private:
     unsigned int generateTexture(const char* filename, const unsigned int texCount);
 
     static const unsigned int mBufSize = 4;
-    
+
     float mAmbient[VALS_PER_MTL_SURFACE];
     float mDiffuse[VALS_PER_MTL_SURFACE];
     float mSpecular[VALS_PER_MTL_SURFACE];
@@ -67,9 +67,9 @@ private:
     unsigned int mNormalsSize;
     unsigned int mTexCoordsSize;
 
-    unsigned int mVertexVaoHandle;
-    unsigned int mTextureHandle;
-    unsigned int mTextureNormHandle;
+    GLuint mVertexVaoHandle;
+    GLuint mTextureHandle = 0;
+    GLuint mTextureNormHandle = 0;
 };
 
 #endif

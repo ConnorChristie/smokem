@@ -12,10 +12,9 @@ in float gLayer;
 void main()
 {
     ivec3 T = ivec3(gl_FragCoord.xy, gLayer);
-    vec3 oC = texelFetch(Obstacles, T, 0).xyz;
 
-    if (oC.x > 0)
-    {
+    vec3 oC = texelFetch(Obstacles, T, 0).xyz;
+    if (oC.x > 0) {
         FragColor = oC.yzx;
         return;
     }
@@ -52,6 +51,5 @@ void main()
     vec3 oldV = texelFetch(Velocity, T, 0).xyz;
     vec3 grad = vec3(pE - pW, pN - pS, pU - pD) * GradientScale;
     vec3 newV = oldV - grad;
-
-    FragColor = (vMask * newV) + obstV;
+    FragColor = (vMask * newV) + obstV;  
 }

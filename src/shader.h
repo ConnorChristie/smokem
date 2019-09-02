@@ -35,6 +35,8 @@ public:
 
     GLuint id() const { return mHandle; }
 
+    void bindDefaultAttribs();
+
 private:
     GLuint mHandle;
     GLuint loadProgram(std::initializer_list<Shader> shaders);

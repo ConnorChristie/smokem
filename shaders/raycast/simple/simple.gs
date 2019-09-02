@@ -1,7 +1,7 @@
 #version 400
 
 layout(points) in;
-layout(triangle_strip, max_vertices = 24) out;
+layout(triangle_strip, max_vertices = 6) out;
 
 uniform mat4 ModelviewProjection;
 
@@ -45,6 +45,15 @@ void main()
         ndcCube[vert] = ModelviewProjection * objCube[vert];
 
     // Emit the six faces:
-    for (int face = 0; face < 6; face++)
-        emit_face(face);
+    // for (int face = 0; face < 6; face++)
+    //     emit_face(face);
+
+    gl_Position = vec4(-1, -1, 0, 1);
+    EmitVertex();
+    gl_Position = vec4(1, -1, 0, 1);
+    EmitVertex();
+    gl_Position = vec4(1, 1, 0, 1);
+    EmitVertex();
+
+    EndPrimitive();
 }

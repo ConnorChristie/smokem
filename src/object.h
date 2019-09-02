@@ -21,7 +21,7 @@ public:
 
     ~Object();
 
-    void render(GLuint programID);
+    void render(GLuint programID, bool useMaterial = true);
 
     void setRotation(glm::vec3 rotation);
     void setTranslation(glm::vec3 translation);

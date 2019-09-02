@@ -46,9 +46,14 @@ int main(int argc, char *argv[])
         smokem.update(window, deltaTime.count());
         smokem.render();
 
+        smokem.updateSmoke(deltaTime.count());
+        smokem.renderSmoke();
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    smokem.exit();
 
     glfwDestroyWindow(window);
     glfwTerminate();

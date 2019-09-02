@@ -16,8 +16,7 @@ void main()
 {
     vec3 fragCoord = vec3(gl_FragCoord.xy, gLayer);
     float solid = texture(Obstacles, InverseSize * fragCoord).x;
-    if (solid > 0)
-    {
+    if (solid > 0) {
         FragColor = vec4(0);
         return;
     }

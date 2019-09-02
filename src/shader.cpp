@@ -41,8 +41,6 @@ GLuint Shader::loadShader(GLenum shaderType, const std::string& filename)
     return shader;
 }
 
-
-
 Program::Program(std::initializer_list<Shader> shaders)
     : mHandle(loadProgram(shaders))
 {
@@ -65,10 +63,11 @@ GLuint Program::loadProgram(std::initializer_list<Shader> shaders)
         glAttachShader(program, it->id());
     }
 
-    glLinkProgram(program);
-
     GLint status;
+
+    glLinkProgram(program);
     glGetProgramiv(program, GL_LINK_STATUS, &status);
+
     if (status == GL_FALSE)
     {
         GLint infoLogLength;
@@ -80,6 +79,7 @@ GLuint Program::loadProgram(std::initializer_list<Shader> shaders)
 
     GLchar compilerSpew[256];
     GLint linkSuccess;
+
     glGetProgramiv(program, GL_LINK_STATUS, &linkSuccess);
     glGetProgramInfoLog(program, sizeof(compilerSpew), 0, compilerSpew);
 
@@ -90,4 +90,11 @@ GLuint Program::loadProgram(std::initializer_list<Shader> shaders)
     }
 
     return program;
+}
+
+void Program::bindDefaultAttribs()
+{
+    glUseProgram(mHandle);
+    glBindAttribLocation(mHandle, 0, "Position");
+    glBindAttribLocation(mHandle, 1, "TexCoord");
 }

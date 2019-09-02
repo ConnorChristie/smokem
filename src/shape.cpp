@@ -54,26 +54,32 @@ void Shape::shapeInit(GLuint programID, tinyobj::shape_t shape, tinyobj::materia
     }
     {
         // Normals
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[NORMALS_BUF_POS]);
-        glBufferData(GL_ARRAY_BUFFER, mNormalsSize * sizeof(float), &shape.mesh.normals.front(), GL_STATIC_DRAW);
-
         auto normLoc = glGetAttribLocation(programID, "a_normal");
-        glEnableVertexAttribArray(normLoc);
-        glVertexAttribPointer(normLoc, VALS_PER_NORM, GL_FLOAT, GL_FALSE, 0, 0);
+        if (normLoc != -1)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, buffers[NORMALS_BUF_POS]);
+            glBufferData(GL_ARRAY_BUFFER, mNormalsSize * sizeof(float), &shape.mesh.normals.front(), GL_STATIC_DRAW);
+
+            glEnableVertexAttribArray(normLoc);
+            glVertexAttribPointer(normLoc, VALS_PER_NORM, GL_FLOAT, GL_FALSE, 0, 0);
+        }
     }
 
     if (mTexCoordsSize > 0)
     {
         // Texture
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[TEXCOORDS_BUF_POS]);
-        glBufferData(GL_ARRAY_BUFFER, mTexCoordsSize * sizeof(float), &shape.mesh.texcoords.front(), GL_STATIC_DRAW);
-
         auto texLoc = glGetAttribLocation(programID, "a_tex_coord");
-        glEnableVertexAttribArray(texLoc);
-        glVertexAttribPointer(texLoc, VALS_PER_TEXCOORD, GL_FLOAT, GL_FALSE, 0, 0);
+        if (texLoc != -1)
+        {
+            glBindBuffer(GL_ARRAY_BUFFER, buffers[TEXCOORDS_BUF_POS]);
+            glBufferData(GL_ARRAY_BUFFER, mTexCoordsSize * sizeof(float), &shape.mesh.texcoords.front(), GL_STATIC_DRAW);
 
-        mTextureHandle = generateTexture((directory + material.diffuse_texname).c_str(), 0);
-        mTextureNormHandle = generateTexture((directory + material.normal_texname + "normTex.png").c_str(), 1);
+            glEnableVertexAttribArray(texLoc);
+            glVertexAttribPointer(texLoc, VALS_PER_TEXCOORD, GL_FLOAT, GL_FALSE, 0, 0);
+
+            mTextureHandle = generateTexture((directory + material.diffuse_texname).c_str(), 0);
+            mTextureNormHandle = generateTexture((directory + material.normal_texname + "normTex.png").c_str(), 1);
+        }
     }
     else
     {
@@ -84,10 +90,11 @@ void Shape::shapeInit(GLuint programID, tinyobj::shape_t shape, tinyobj::materia
     assert(checkError());
 }
 
-void Shape::render(GLuint programID)
+void Shape::render(GLuint programID, bool useMaterial)
 {
     glUseProgram(programID);
 
+    if (mTextureHandle != 0)
     {
         // Texture
         glActiveTexture(GL_TEXTURE0);
@@ -99,6 +106,7 @@ void Shape::render(GLuint programID)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
+    if (mTextureNormHandle != 0)
     {
         // Normals
         glActiveTexture(GL_TEXTURE1);
@@ -110,6 +118,7 @@ void Shape::render(GLuint programID)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
+    if (useMaterial)
     {
         // Material
         glUniform3fv(glGetUniformLocation(programID, "mtl_ambient"), 1, mAmbient);

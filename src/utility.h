@@ -2,20 +2,17 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <vector>
 #include <string>
 #include <assert.h>
 #include <initializer_list>
 #include <memory>
 
-#include "vmath.hpp"
 #include "shader.h"
-
-enum AttributeSlot {
-    SlotPosition,
-    SlotTexCoord,
-    SlotNormal,
-};
 
 struct TexturePod {
     GLuint Handle;
@@ -37,7 +34,6 @@ struct SlabPod {
 };
 
 GLuint makeProgram(std::initializer_list<Shader> shaders);
-GLuint makeRawProgram(std::initializer_list<Shader> shaders);
 
 GLuint CreatePointVbo(float x, float y, float z);
 GLuint CreateQuadVbo();
@@ -53,18 +49,17 @@ void Advect(SurfacePod velocity, SurfacePod source, SurfacePod obstacles, Surfac
 void Jacobi(SurfacePod pressure, SurfacePod divergence, SurfacePod obstacles, SurfacePod dest);
 void SubtractGradient(SurfacePod velocity, SurfacePod pressure, SurfacePod obstacles, SurfacePod dest);
 void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod dest);
-void ApplyImpulse(vmath::Matrix4 modelViewProjection, SurfacePod dest, vmath::Vector3 position, float value, int indexCount);
+void ApplyImpulse(SurfacePod dest, glm::vec3 position, float value);
 void ApplyBuoyancy(SurfacePod velocity, SurfacePod temperature, SurfacePod density, SurfacePod dest);
-void DrawModel(vmath::Matrix4 modelViewProjection, int indexCount);
+void DrawModel(glm::mat4 modelViewProjection, int indexCount);
 
 void SetUniform(const char* name, int value);
 void SetUniform(const char* name, float value);
 void SetUniform(const char* name, float x, float y);
-void SetUniform(const char* name, vmath::Matrix4 value);
-void SetUniform(const char* name, vmath::Matrix3 value);
-void SetUniform(const char* name, vmath::Vector3 value);
-void SetUniform(const char* name, vmath::Point3 value);
-void SetUniform(const char* name, vmath::Vector4 value);
+void SetUniform(const char* name, glm::mat4 value);
+void SetUniform(const char* name, glm::mat3 value);
+void SetUniform(const char* name, glm::vec3 value);
+void SetUniform(const char* name, glm::vec4 value);
 
 void ResetState();
 bool checkError();
@@ -82,4 +77,4 @@ extern const float TimeStep;
 extern const float SmokeBuoyancy;
 extern const float SmokeWeight;
 extern const float GradientScale;
-extern const vmath::Vector3 ImpulsePosition;
+extern const glm::vec3 ImpulsePosition;
