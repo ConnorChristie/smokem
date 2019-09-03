@@ -99,7 +99,7 @@ void Shape::render(GLuint programID, bool useMaterial)
         // Texture
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mTextureHandle);
-        glUniform1i(glGetUniformLocation(programID, "tex_map"), 0);
+        glUniform1i(getUniformLocation(programID, "tex_map"), 0);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -111,7 +111,7 @@ void Shape::render(GLuint programID, bool useMaterial)
         // Normals
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, mTextureNormHandle);
-        glUniform1i(glGetUniformLocation(programID, "tex_norm"), 1);
+        glUniform1i(getUniformLocation(programID, "tex_norm"), 1);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -121,11 +121,11 @@ void Shape::render(GLuint programID, bool useMaterial)
     if (useMaterial)
     {
         // Material
-        glUniform3fv(glGetUniformLocation(programID, "mtl_ambient"), 1, mAmbient);
-        glUniform3fv(glGetUniformLocation(programID, "mtl_diffuse"), 1, mDiffuse);
-        glUniform3fv(glGetUniformLocation(programID, "mtl_specular"), 1, mSpecular);
-        glUniform3fv(glGetUniformLocation(programID, "mtl_emission"), 1, mEmission);
-        glUniform1f(glGetUniformLocation(programID, "mtl_shininess"), mShininess);
+        glUniform3fv(getUniformLocation(programID, "mtl_ambient"), 1, mAmbient);
+        glUniform3fv(getUniformLocation(programID, "mtl_diffuse"), 1, mDiffuse);
+        glUniform3fv(getUniformLocation(programID, "mtl_specular"), 1, mSpecular);
+        glUniform3fv(getUniformLocation(programID, "mtl_emission"), 1, mEmission);
+        glUniform1f(getUniformLocation(programID, "mtl_shininess"), mShininess);
     }
 
     glBindVertexArray(mVertexVaoHandle);

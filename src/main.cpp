@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     //glfwSetCursorPosCallback(window, PezCursorCallback);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    glfwSwapInterval(1);
+    //glfwSwapInterval(1);
 
     smokem.initialize(window);
 

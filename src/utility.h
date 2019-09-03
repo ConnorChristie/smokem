@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <map>
 #include <vector>
 #include <string>
 #include <assert.h>
@@ -51,15 +52,17 @@ void SubtractGradient(SurfacePod velocity, SurfacePod pressure, SurfacePod obsta
 void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod dest);
 void ApplyImpulse(SurfacePod dest, glm::vec3 position, float value);
 void ApplyBuoyancy(SurfacePod velocity, SurfacePod temperature, SurfacePod density, SurfacePod dest);
-void DrawModel(glm::mat4 modelViewProjection, int indexCount);
 
-void SetUniform(const char* name, int value);
-void SetUniform(const char* name, float value);
-void SetUniform(const char* name, float x, float y);
-void SetUniform(const char* name, glm::mat4 value);
-void SetUniform(const char* name, glm::mat3 value);
-void SetUniform(const char* name, glm::vec3 value);
-void SetUniform(const char* name, glm::vec4 value);
+GLuint getUniformLocation(GLuint program, const char* name);
+void SetUniform(GLuint program, const char* name, int value);
+void SetUniform(GLuint program, const char* name, float value);
+void SetUniform(GLuint program, const char* name, std::vector<float> values);
+void SetUniform(GLuint program, const char* name, float x, float y);
+void SetUniform(GLuint program, const char* name, glm::mat4 value);
+void SetUniform(GLuint program, const char* name, glm::mat3 value);
+void SetUniform(GLuint program, const char* name, glm::vec3 value);
+void SetUniform(GLuint program, const char* name, glm::vec4 value);
+void SetUniform(GLuint program, const char* name, std::vector<glm::vec3> value);
 
 void ResetState();
 bool checkError();

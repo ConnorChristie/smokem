@@ -204,10 +204,11 @@ void Smokem::renderSmoke()
         glBindVertexArray(Vaos.FullscreenQuad);
         glBindTexture(GL_TEXTURE_3D, Slabs.Density.Ping.ColorTexture);
 
-        glUseProgram(BlurProgram->id());
-        SetUniform("DensityScale", 5.0f);
-        SetUniform("StepSize", sqrtf(2.0) / float(ViewSamples));
-        SetUniform("InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
+        GLuint pid = BlurProgram->id();
+        glUseProgram(pid);
+        SetUniform(pid, "DensityScale", 5.0f);
+        SetUniform(pid, "StepSize", sqrtf(2.0) / float(ViewSamples));
+        SetUniform(pid, "InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
 
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, GridDepth);
     }
@@ -223,10 +224,11 @@ void Smokem::renderSmoke()
         glBindVertexArray(Vaos.FullscreenQuad);
         glBindTexture(GL_TEXTURE_3D, Surfaces.BlurredDensity.ColorTexture);
 
-        glUseProgram(LightProgram->id());
-        SetUniform("LightStep", sqrtf(2.0) / float(LightSamples));
-        SetUniform("LightSamples", LightSamples);
-        SetUniform("InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
+        GLuint pid = LightProgram->id();
+        glUseProgram(pid);
+        SetUniform(pid, "LightStep", sqrtf(2.0) / float(LightSamples));
+        SetUniform(pid, "LightSamples", LightSamples);
+        SetUniform(pid, "InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
 
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, GridDepth);
     }
@@ -248,15 +250,16 @@ void Smokem::renderSmoke()
     glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
     glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
 
-    glUseProgram(RaycastProgram->id());
-    SetUniform("Modelview", modelView);
-    SetUniform("ViewSamples", ViewSamples);
-    SetUniform("Density", 0);
-    SetUniform("LightCache", 1);
-    SetUniform("RayOrigin", glm::vec3(glm::transpose(modelView) * glm::vec4(camera->getTranslation(), 1)));
-    SetUniform("FocalLength", 1.0f / std::tan(FieldOfView / 2));
-    SetUniform("WindowSize", float(cfg.Width), float(cfg.Height));
-    SetUniform("StepSize", sqrtf(2.0) / float(ViewSamples));
+    GLuint pid = RaycastProgram->id();
+    glUseProgram(pid);
+    SetUniform(pid, "Modelview", modelView);
+    SetUniform(pid, "ViewSamples", ViewSamples);
+    SetUniform(pid, "Density", 0);
+    SetUniform(pid, "LightCache", 1);
+    SetUniform(pid, "RayOrigin", glm::vec3(glm::transpose(modelView) * glm::vec4(camera->getTranslation(), 1)));
+    SetUniform(pid, "FocalLength", 1.0f / std::tan(FieldOfView / 2));
+    SetUniform(pid, "WindowSize", float(cfg.Width), float(cfg.Height));
+    SetUniform(pid, "StepSize", sqrtf(2.0) / float(ViewSamples));
 
     glDrawArrays(GL_POINTS, 0, 1);
 }
@@ -290,16 +293,16 @@ void Smokem::update(GLFWwindow* window, long long dt)
         Program* p = ModelProgram;
         {
             // Camera
-            glUniformMatrix4fv(glGetUniformLocation(p->id(), "view_matrix"), 1, false, glm::value_ptr(viewMatrix));
-            glUniformMatrix4fv(glGetUniformLocation(p->id(), "projection_matrix"), 1, false, glm::value_ptr(projectionMatrix));
+            SetUniform(p->id(), "view_matrix", viewMatrix);
+            SetUniform(p->id(), "projection_matrix", projectionMatrix);
         }
         {
             // Lights
-            glUniform3fv(glGetUniformLocation(p->id(), "lightPositions"), lights.size(), glm::value_ptr(positions.front()));
-            glUniform3fv(glGetUniformLocation(p->id(), "lightAmbients"), lights.size(), glm::value_ptr(ambients.front()));
-            glUniform3fv(glGetUniformLocation(p->id(), "lightDiffuses"), lights.size(), glm::value_ptr(diffuses.front()));
-            glUniform3fv(glGetUniformLocation(p->id(), "lightSpeculars"), lights.size(), glm::value_ptr(speculars.front()));
-            glUniform1fv(glGetUniformLocation(p->id(), "lightBrightnesses"), lights.size(), &brightnesses.front());
+            SetUniform(p->id(), "lightPositions", positions);
+            SetUniform(p->id(), "lightAmbients", ambients);
+            SetUniform(p->id(), "lightDiffuses", diffuses);
+            SetUniform(p->id(), "lightSpeculars", speculars);
+            SetUniform(p->id(), "lightBrightnesses", brightnesses);
         }
     }
 
@@ -397,7 +400,7 @@ void Smokem::render()
     for (const auto &obj : objects)
     {
         glm::mat3 normMtx = glm::transpose(glm::inverse(glm::mat3(obj->getModelMatrix() * camera->getViewMatrix())));
-        glUniformMatrix3fv(glGetUniformLocation(p->id(), "normal_matrix"), 1, false, glm::value_ptr(normMtx));
+        SetUniform(p->id(), "normal_matrix", normMtx);
     
         obj->render(p->id());
     }

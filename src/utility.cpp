@@ -23,6 +23,8 @@ const float GradientScale = 1.125f / CellSize;
 
 const glm::vec3 ImpulsePosition(GridWidth / 2.0f, GridHeight - (int) SplatRadius / 2.0f, GridDepth / 2.0f);
 
+static std::map<std::pair<GLuint, std::string>, GLuint> uniformCache;
+
 GLuint makeProgram(std::initializer_list<Shader> shaders)
 {
     GLuint program = glCreateProgram();
@@ -322,13 +324,14 @@ GLuint CreateQuadVbo()
 
 void Advect(SurfacePod velocity, SurfacePod source, SurfacePod obstacles, SurfacePod dest, float dissipation)
 {
-    glUseProgram(Programs.Advect);
-    SetUniform("InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
-    SetUniform("TimeStep", TimeStep);
-    SetUniform("Dissipation", dissipation);
-    SetUniform("VelocityTexture", 0);
-    SetUniform("SourceTexture", 1);
-    SetUniform("Obstacles", 2);
+    GLuint pid = Programs.Advect;
+    glUseProgram(pid);
+    SetUniform(pid, "InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
+    SetUniform(pid, "TimeStep", TimeStep);
+    SetUniform(pid, "Dissipation", dissipation);
+    SetUniform(pid, "VelocityTexture", 0);
+    SetUniform(pid, "SourceTexture", 1);
+    SetUniform(pid, "Obstacles", 2);
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -344,12 +347,13 @@ void Advect(SurfacePod velocity, SurfacePod source, SurfacePod obstacles, Surfac
 
 void Jacobi(SurfacePod pressure, SurfacePod divergence, SurfacePod obstacles, SurfacePod dest)
 {
-    glUseProgram(Programs.Jacobi);
-    SetUniform("Alpha", -CellSize * CellSize);
-    SetUniform("InverseBeta", 0.1666f);
-    SetUniform("Pressure", 0);
-    SetUniform("Divergence", 1);
-    SetUniform("Obstacles", 2);
+    GLuint pid = Programs.Jacobi;
+    glUseProgram(pid);
+    SetUniform(pid, "Alpha", -CellSize * CellSize);
+    SetUniform(pid, "InverseBeta", 0.1666f);
+    SetUniform(pid, "Pressure", 0);
+    SetUniform(pid, "Divergence", 1);
+    SetUniform(pid, "Obstacles", 2);
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -364,12 +368,13 @@ void Jacobi(SurfacePod pressure, SurfacePod divergence, SurfacePod obstacles, Su
 
 void SubtractGradient(SurfacePod velocity, SurfacePod pressure, SurfacePod obstacles, SurfacePod dest)
 {
-    glUseProgram(Programs.SubtractGradient);
-    SetUniform("GradientScale", GradientScale);
-    SetUniform("HalfInverseCellSize", 0.5f / CellSize);
-    SetUniform("Velocity", 0);
-    SetUniform("Pressure", 1);
-    SetUniform("Obstacles", 2);
+    GLuint pid = Programs.SubtractGradient;
+    glUseProgram(pid);
+    SetUniform(pid, "GradientScale", GradientScale);
+    SetUniform(pid, "HalfInverseCellSize", 0.5f / CellSize);
+    SetUniform(pid, "Velocity", 0);
+    SetUniform(pid, "Pressure", 1);
+    SetUniform(pid, "Obstacles", 2);
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -384,10 +389,11 @@ void SubtractGradient(SurfacePod velocity, SurfacePod pressure, SurfacePod obsta
 
 void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod dest)
 {
-    glUseProgram(Programs.ComputeDivergence);
-    SetUniform("HalfInverseCellSize", 0.5f / CellSize);
-    SetUniform("Velocity", 0);
-    SetUniform("Obstacles", 1);
+    GLuint pid = Programs.ComputeDivergence;
+    glUseProgram(pid);
+    SetUniform(pid, "HalfInverseCellSize", 0.5f / CellSize);
+    SetUniform(pid, "Velocity", 0);
+    SetUniform(pid, "Obstacles", 1);
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -400,10 +406,11 @@ void ComputeDivergence(SurfacePod velocity, SurfacePod obstacles, SurfacePod des
 
 void ApplyImpulse(SurfacePod dest, glm::vec3 position, float value)
 {
-    glUseProgram(Programs.ApplyImpulse);
-    SetUniform("Point", position);
-    SetUniform("Radius", SplatRadius);
-    SetUniform("FillColor", glm::vec3(value));
+    GLuint pid = Programs.ApplyImpulse;
+    glUseProgram(pid);
+    SetUniform(pid, "Point", position);
+    SetUniform(pid, "Radius", SplatRadius);
+    SetUniform(pid, "FillColor", glm::vec3(value));
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glEnable(GL_BLEND);
@@ -413,14 +420,15 @@ void ApplyImpulse(SurfacePod dest, glm::vec3 position, float value)
 
 void ApplyBuoyancy(SurfacePod velocity, SurfacePod temperature, SurfacePod density, SurfacePod dest)
 {
-    glUseProgram(Programs.ApplyBuoyancy);
-    SetUniform("Velocity", 0);
-    SetUniform("Temperature", 1);
-    SetUniform("Density", 2);
-    SetUniform("AmbientTemperature", AmbientTemperature);
-    SetUniform("TimeStep", TimeStep);
-    SetUniform("Sigma", SmokeBuoyancy);
-    SetUniform("Kappa", SmokeWeight);
+    GLuint pid = Programs.ApplyBuoyancy;
+    glUseProgram(pid);
+    SetUniform(pid, "Velocity", 0);
+    SetUniform(pid, "Temperature", 1);
+    SetUniform(pid, "Density", 2);
+    SetUniform(pid, "AmbientTemperature", AmbientTemperature);
+    SetUniform(pid, "TimeStep", TimeStep);
+    SetUniform(pid, "Sigma", SmokeBuoyancy);
+    SetUniform(pid, "Kappa", SmokeWeight);
 
     glBindFramebuffer(GL_FRAMEBUFFER, dest.FboHandle);
     glActiveTexture(GL_TEXTURE0);
@@ -466,35 +474,45 @@ GLuint CreatePointVbo(float x, float y, float z)
     return vbo;
 }
 
-void SetUniform(const char* name, int value)
+GLuint getUniformLocation(GLuint program, const char* name)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    auto key = std::pair(program, name);
+    auto cachedLoc = uniformCache[key];
+    if (cachedLoc) return cachedLoc;
+
+    auto loc = glGetUniformLocation(program, name);
+    uniformCache[key] = loc;
+
+    return loc;
+}
+
+void SetUniform(GLuint program, const char* name, int value)
+{
+    GLint location = getUniformLocation(program, name);
     glUniform1i(location, value);
 }
 
-void SetUniform(const char* name, float value)
+void SetUniform(GLuint program, const char* name, float value)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    GLint location = getUniformLocation(program, name);
     glUniform1f(location, value);
 }
 
-void SetUniform(const char* name, glm::mat4 value)
+void SetUniform(GLuint program, const char* name, std::vector<float> values)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    GLint location = getUniformLocation(program, name);
+    glUniform1fv(location, values.size(), &values.front());
+}
+
+void SetUniform(GLuint program, const char* name, glm::mat4 value)
+{
+    GLint location = getUniformLocation(program, name);
     glUniformMatrix4fv(location, 1, false, glm::value_ptr(value));
 }
 
-void SetUniform(const char* name, glm::mat3 nm)
+void SetUniform(GLuint program, const char* name, glm::mat3 nm)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    GLint location = getUniformLocation(program, name);
     float packed[9] = {
         nm[0].x, nm[1].x, nm[2].x,
         nm[0].y, nm[1].y, nm[2].y,
@@ -502,27 +520,27 @@ void SetUniform(const char* name, glm::mat3 nm)
     glUniformMatrix3fv(location, 1, 0, &packed[0]);
 }
 
-void SetUniform(const char* name, glm::vec3 value)
+void SetUniform(GLuint program, const char* name, glm::vec3 value)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    GLint location = getUniformLocation(program, name);
     glUniform3f(location, value.x, value.y, value.z);
 }
 
-void SetUniform(const char* name, float x, float y)
+void SetUniform(GLuint program, const char* name, std::vector<glm::vec3> values)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    GLint location = getUniformLocation(program, name);
+    glUniform3fv(location, values.size(), glm::value_ptr(values.front()));
+}
+
+void SetUniform(GLuint program, const char* name, float x, float y)
+{
+    GLint location = getUniformLocation(program, name);
     glUniform2f(location, x, y);
 }
 
-void SetUniform(const char* name, glm::vec4 value)
+void SetUniform(GLuint program, const char* name, glm::vec4 value)
 {
-    GLuint program;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
-    GLint location = glGetUniformLocation(program, name);
+    GLint location = getUniformLocation(program, name);
     glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
