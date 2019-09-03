@@ -249,7 +249,6 @@ void Smokem::renderSmoke()
     glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
 
     glUseProgram(RaycastProgram->id());
-    SetUniform("ModelviewProjection", modelviewProjection);
     SetUniform("Modelview", modelView);
     SetUniform("ViewSamples", ViewSamples);
     SetUniform("Density", 0);

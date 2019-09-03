@@ -58,7 +58,7 @@ void main()
     AABB aabb = AABB(vec3(-1, -1, -1), vec3(1, 1, 1));
 
     float tnear, tfar;
-    IntersectBox(eye, aabb, tnear, tfar);
+    if (!IntersectBox(eye, aabb, tnear, tfar)) return;
     if (tnear < 0.0) tnear = 0.0;
 
     vec3 rayStart = eye.Origin + eye.Dir * tnear;
