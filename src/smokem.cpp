@@ -8,9 +8,7 @@ static Camera* camera;
 static std::vector<Object*> objects;
 static std::vector<Light> lights;
 
-static Object* cube;
-
-static glm::vec3 smokeTranslation(0, 2, 10);
+static glm::vec3 smokeTranslation(-10, 10, 20);
 
 void Smokem::initialize(GLFWwindow* window)
 {
@@ -83,14 +81,14 @@ static struct {
 void Smokem::initSmoke()
 {
     /*RaycastProgram = new Program({
-        Shader(GL_VERTEX_SHADER, "shaders/raycast/raycast.vert"),
-        Shader(GL_GEOMETRY_SHADER, "shaders/raycast/raycast.gs"),
-        Shader(GL_FRAGMENT_SHADER, "shaders/raycast/raycast.frag")
+        Shader(GL_VERTEX_SHADER, "shaders/raycast/simple/simple.vert"),
+        Shader(GL_FRAGMENT_SHADER, "shaders/raycast/simple/simple.frag")
     });*/
 
     RaycastProgram = new Program({
-        Shader(GL_VERTEX_SHADER, "shaders/raycast/simple/simple.vert"),
-        Shader(GL_FRAGMENT_SHADER, "shaders/raycast/simple/simple.frag")
+        Shader(GL_VERTEX_SHADER, "shaders/raycast/raycast.vert"),
+        Shader(GL_GEOMETRY_SHADER, "shaders/raycast/raycast.gs"),
+        Shader(GL_FRAGMENT_SHADER, "shaders/raycast/raycast.frag")
     });
 
     LightProgram = new Program({
@@ -105,7 +103,7 @@ void Smokem::initSmoke()
         Shader(GL_FRAGMENT_SHADER, "shaders/light/blur.frag")
     });
 
-    cube = new Object(RaycastProgram->id(), "models\\cube\\cube.obj");
+    //cube = new Object(RaycastProgram->id(), "models\\cube\\cube.obj");
 
     glGenVertexArrays(1, &Vaos.CubeCenter);
     glBindVertexArray(Vaos.CubeCenter);
@@ -120,6 +118,8 @@ void Smokem::initSmoke()
     glVertexAttribPointer(0, 2, GL_SHORT, GL_FALSE, 2 * sizeof(short), 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    InitializeSlabPrograms();
 
     Slabs.Velocity = CreateSlab(GridWidth, GridHeight, GridDepth, 3);
     Slabs.Density = CreateSlab(GridWidth, GridHeight, GridDepth, 1);
@@ -129,13 +129,17 @@ void Smokem::initSmoke()
     Surfaces.Divergence = CreateVolume(GridWidth, GridHeight, GridDepth, 3);
     Surfaces.LightCache = CreateVolume(GridWidth, GridHeight, GridDepth, 1);
     Surfaces.BlurredDensity = CreateVolume(GridWidth, GridHeight, GridDepth, 1);
-
-    InitializeSlabPrograms();
-
     Surfaces.Obstacles = CreateVolume(GridWidth, GridHeight, GridDepth, 3);
+
     CreateObstacles(Surfaces.Obstacles);
     ClearSurface(Slabs.Temperature.Ping, AmbientTemperature);
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
+
+glm::mat4 modelMatrix = glm::mat4(1);
 
 void Smokem::updateSmoke(long long dt)
 {
@@ -145,9 +149,6 @@ void Smokem::updateSmoke(long long dt)
     glDisable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glm::mat4 modelMatrix = glm::mat4(1);
-    modelMatrix = glm::translate(modelMatrix, camera->getTranslation());
-
     glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
     glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
 
@@ -155,23 +156,32 @@ void Smokem::updateSmoke(long long dt)
     {
         glBindVertexArray(Vaos.FullscreenQuad);
         glViewport(0, 0, GridWidth, GridHeight);
+
         Advect(Slabs.Velocity.Ping, Slabs.Velocity.Ping, Surfaces.Obstacles, Slabs.Velocity.Pong, VelocityDissipation);
         SwapSurfaces(&Slabs.Velocity);
+
         Advect(Slabs.Velocity.Ping, Slabs.Temperature.Ping, Surfaces.Obstacles, Slabs.Temperature.Pong, TemperatureDissipation);
         SwapSurfaces(&Slabs.Temperature);
+
         Advect(Slabs.Velocity.Ping, Slabs.Density.Ping, Surfaces.Obstacles, Slabs.Density.Pong, DensityDissipation);
         SwapSurfaces(&Slabs.Density);
+
         ApplyBuoyancy(Slabs.Velocity.Ping, Slabs.Temperature.Ping, Slabs.Density.Ping, Slabs.Velocity.Pong);
         SwapSurfaces(&Slabs.Velocity);
+
         ApplyImpulse(Slabs.Temperature.Ping, ImpulsePosition, ImpulseTemperature);
         ApplyImpulse(Slabs.Density.Ping, ImpulsePosition, ImpulseDensity);
         ComputeDivergence(Slabs.Velocity.Ping, Surfaces.Obstacles, Surfaces.Divergence);
         ClearSurface(Slabs.Pressure.Ping, 0);
+
         for (int i = 0; i < NumJacobiIterations; ++i)
         {
             Jacobi(Slabs.Pressure.Ping, Surfaces.Divergence, Surfaces.Obstacles, Slabs.Pressure.Pong);
             SwapSurfaces(&Slabs.Pressure);
         }
+
+        assert(checkError());
+
         SubtractGradient(Slabs.Velocity.Ping, Slabs.Pressure.Ping, Surfaces.Obstacles, Slabs.Velocity.Pong);
         SwapSurfaces(&Slabs.Velocity);
     }
@@ -182,6 +192,8 @@ void Smokem::renderSmoke()
 {
     Config cfg = getConfig();
 
+    glActiveTexture(GL_TEXTURE0);
+
     // Blur and brighten the density map:
     bool BlurAndBrighten = true;
     if (BlurAndBrighten)
@@ -191,10 +203,12 @@ void Smokem::renderSmoke()
         glViewport(0, 0, Slabs.Density.Ping.Width, Slabs.Density.Ping.Height);
         glBindVertexArray(Vaos.FullscreenQuad);
         glBindTexture(GL_TEXTURE_3D, Slabs.Density.Ping.ColorTexture);
+
         glUseProgram(BlurProgram->id());
         SetUniform("DensityScale", 5.0f);
         SetUniform("StepSize", sqrtf(2.0) / float(ViewSamples));
         SetUniform("InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
+
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, GridDepth);
     }
     assert(checkError());
@@ -208,17 +222,22 @@ void Smokem::renderSmoke()
         glViewport(0, 0, Surfaces.LightCache.Width, Surfaces.LightCache.Height);
         glBindVertexArray(Vaos.FullscreenQuad);
         glBindTexture(GL_TEXTURE_3D, Surfaces.BlurredDensity.ColorTexture);
+
         glUseProgram(LightProgram->id());
         SetUniform("LightStep", sqrtf(2.0) / float(LightSamples));
         SetUniform("LightSamples", LightSamples);
         SetUniform("InverseSize", 1.0f / glm::vec3(GridWidth, GridHeight, GridDepth));
+
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, GridDepth);
     }
     assert(checkError());
 
     // Perform raycasting:
+    glEnable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, cfg.Width, cfg.Height);
+
+    glBindVertexArray(Vaos.CubeCenter);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, Surfaces.BlurredDensity.ColorTexture);
@@ -226,32 +245,21 @@ void Smokem::renderSmoke()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_3D, Surfaces.LightCache.ColorTexture);
 
+    glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
+    glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
+
     glUseProgram(RaycastProgram->id());
-    {
-        glm::mat4 modelMatrix = glm::mat4(1);
-        modelMatrix = glm::translate(modelMatrix, camera->getTranslation());
+    SetUniform("ModelviewProjection", modelviewProjection);
+    SetUniform("Modelview", modelView);
+    SetUniform("ViewSamples", ViewSamples);
+    SetUniform("Density", 0);
+    SetUniform("LightCache", 1);
+    SetUniform("RayOrigin", glm::vec3(glm::transpose(modelView) * glm::vec4(camera->getTranslation(), 1)));
+    SetUniform("FocalLength", 1.0f / std::tan(FieldOfView / 2));
+    SetUniform("WindowSize", float(cfg.Width), float(cfg.Height));
+    SetUniform("StepSize", sqrtf(2.0) / float(ViewSamples));
 
-        glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
-        glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
-
-        SetUniform("Density", 0);
-        SetUniform("LightCache", 1);
-        SetUniform("Modelview", modelView);
-        SetUniform("FocalLength", 1.0f / std::tan(glm::radians(camera->getFov()) / 2));
-        SetUniform("WindowSize", float(cfg.Width), float(cfg.Height));
-        SetUniform("StepSize", sqrtf(2.0) / float(ViewSamples));
-        SetUniform("ViewSamples", ViewSamples);
-        SetUniform("RayOrigin", glm::vec3(glm::transpose(modelView) * glm::vec4(camera->getTranslation(), 1)));
-        SetUniform("ModelviewProjection", modelviewProjection);
-
-        //glDrawArrays(GL_POINTS, 0, 1);
-        cube->render(RaycastProgram->id(), false);
-    }
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, 0);
+    glDrawArrays(GL_POINTS, 0, 1);
 }
 
 void Smokem::update(GLFWwindow* window, long long dt)

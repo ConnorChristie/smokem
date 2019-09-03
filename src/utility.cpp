@@ -10,9 +10,9 @@ static struct {
 } Programs;
 
 const float CellSize = 1.25f;
-const int GridWidth = 64;
-const int GridHeight = 64;
-const int GridDepth = 64;
+const int GridWidth = 128;
+const int GridHeight = 128;
+const int GridDepth = 128;
 const float SplatRadius = 8.0f;
 const float AmbientTemperature = 0.0f;
 const int NumJacobiIterations = 40;
@@ -487,7 +487,7 @@ void SetUniform(const char* name, glm::mat4 value)
     GLuint program;
     glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)& program);
     GLint location = glGetUniformLocation(program, name);
-    glUniformMatrix4fv(location, 1, 0, glm::value_ptr(value));
+    glUniformMatrix4fv(location, 1, false, glm::value_ptr(value));
 }
 
 void SetUniform(const char* name, glm::mat3 nm)

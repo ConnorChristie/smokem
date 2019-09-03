@@ -5,12 +5,15 @@ out vec4 FragColor;
 uniform sampler3D Density;
 uniform sampler3D LightCache;
 
-uniform mat4 Modelview;
+in vec2 TexCoord;
+in vec4 VertexPosition;
+
+uniform mat4 ModelMatrix;
 uniform float FocalLength;
 uniform vec2 WindowSize;
 uniform float StepSize;
 uniform int ViewSamples;
-
+uniform vec3 CameraPosition;
 uniform vec3 RayOrigin;
 
 uniform vec3 Ambient = vec3(0.15, 0.15, 0.20);
@@ -41,11 +44,11 @@ void main()
 {
     vec3 rayDirection;
     rayDirection.xy = 2.0 * gl_FragCoord.xy / WindowSize - 1.0;
-    rayDirection.y *= WindowSize.y / WindowSize.x;
+    rayDirection.x /= WindowSize.y / WindowSize.x;
     rayDirection.z = -FocalLength;
-    rayDirection = (vec4(rayDirection, 0) * Modelview).xyz;
+    rayDirection = normalize((vec4(rayDirection, 0) * ModelMatrix).xyz);
 
-    Ray eye = Ray( RayOrigin, normalize(rayDirection) );
+    Ray eye = Ray(RayOrigin, rayDirection);
     AABB aabb = AABB(vec3(-1), vec3(1));
 
     float tnear, tfar;
@@ -59,10 +62,11 @@ void main()
 
     vec3 pos = rayStart;
     vec3 viewDir = normalize(rayStop - rayStart) * StepSize;
-    float T = 1.0;
-    vec3 Lo = Ambient;
 
     float remainingLength = distance(rayStop, rayStart);
+    float T = 1.0;
+
+    vec3 Lo = Ambient;
 
     for (int i = 0; i < ViewSamples && remainingLength > 0.0; ++i, pos += viewDir, remainingLength -= StepSize)
     {
@@ -90,6 +94,8 @@ void main()
     FragColor.rgb = Lo;
     FragColor.a = 1 - T;
 
-    FragColor.rgb = gl_FragCoord.xyz;
-    FragColor.a = 0.2;
+    // vec4 tex = texture(Density, vec3(2.0 * gl_FragCoord.xy / WindowSize - 1.0, 1));
+    // FragColor = vec4(tex.xyz, 1);
+
+    // FragColor = vec4(texture(Density, VertexPosition.xyz).xxx, 1);
 }
