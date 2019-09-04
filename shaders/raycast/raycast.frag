@@ -11,6 +11,7 @@ uniform float FocalLength;
 uniform vec2 WindowSize;
 uniform vec3 RayOrigin;
 uniform vec3 Ambient = vec3(0.15, 0.15, 0.20);
+uniform vec3 LightColor = vec3(1, 1, 1);
 uniform float StepSize;
 uniform int ViewSamples;
 
@@ -50,12 +51,12 @@ void main()
 {
     vec3 rayDirection;
     rayDirection.xy = 2.0 * gl_FragCoord.xy / WindowSize - 1.0;
-    rayDirection.x /= WindowSize.y / WindowSize.x;
+    rayDirection.x *= WindowSize.x / WindowSize.y;
     rayDirection.z = -FocalLength;
     rayDirection = (vec4(rayDirection, 0) * Modelview).xyz;
 
-    Ray eye = Ray( RayOrigin, normalize(rayDirection) );
-    AABB aabb = AABB(vec3(-1, -1, -1), vec3(1, 1, 1));
+    Ray eye = Ray(RayOrigin, normalize(rayDirection));
+    AABB aabb = AABB(vec3(-1), vec3(1));
 
     float tnear, tfar;
     if (!IntersectBox(eye, aabb, tnear, tfar)) return;
@@ -76,11 +77,11 @@ void main()
     for (int i = 0; i < ViewSamples && remainingLength > 0.0; ++i, pos += viewDir, remainingLength -= StepSize)
     {
         float density = GetDensity(pos);
-        vec3 lightColor = vec3(1, 0.2, 0.4);
+        vec3 lightColor = LightColor;
 
         if (pos.z < 0.1)
         {
-            // Draw a dark colored floow so we can see the shadow
+            // Draw a dark colored floor so we can see the shadow
             density = 10;
             lightColor = 3 * Ambient;
         }

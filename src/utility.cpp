@@ -510,14 +510,10 @@ void SetUniform(GLuint program, const char* name, glm::mat4 value)
     glUniformMatrix4fv(location, 1, false, glm::value_ptr(value));
 }
 
-void SetUniform(GLuint program, const char* name, glm::mat3 nm)
+void SetUniform(GLuint program, const char* name, glm::mat3 value)
 {
     GLint location = getUniformLocation(program, name);
-    float packed[9] = {
-        nm[0].x, nm[1].x, nm[2].x,
-        nm[0].y, nm[1].y, nm[2].y,
-        nm[0].z, nm[1].z, nm[2].z };
-    glUniformMatrix3fv(location, 1, 0, &packed[0]);
+    glUniformMatrix3fv(location, 1, false, glm::value_ptr(value));
 }
 
 void SetUniform(GLuint program, const char* name, glm::vec3 value)
@@ -536,12 +532,6 @@ void SetUniform(GLuint program, const char* name, float x, float y)
 {
     GLint location = getUniformLocation(program, name);
     glUniform2f(location, x, y);
-}
-
-void SetUniform(GLuint program, const char* name, glm::vec4 value)
-{
-    GLint location = getUniformLocation(program, name);
-    glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
 bool checkError()

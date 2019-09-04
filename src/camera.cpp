@@ -47,7 +47,7 @@ void Camera::update(GLFWwindow* window, long long deltaTime)
         yaw   += xoffset;
         pitch += yoffset;
 
-        pitch = glm::clamp(pitch, -90.0f, 90.0f);
+        pitch = glm::clamp(pitch, -89.0f, 89.0f);
 
         glm::vec3 front;
         front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));

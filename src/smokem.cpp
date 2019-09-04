@@ -149,9 +149,6 @@ void Smokem::updateSmoke(long long dt)
     glDisable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
-    glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
-
     if (SimulateFluid)
     {
         glBindVertexArray(Vaos.FullscreenQuad);
@@ -248,7 +245,6 @@ void Smokem::renderSmoke()
     glBindTexture(GL_TEXTURE_3D, Surfaces.LightCache.ColorTexture);
 
     glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
-    glm::mat4 modelviewProjection = camera->getProjectionMatrix() * modelView;
 
     GLuint pid = RaycastProgram->id();
     glUseProgram(pid);
@@ -256,7 +252,7 @@ void Smokem::renderSmoke()
     SetUniform(pid, "ViewSamples", ViewSamples);
     SetUniform(pid, "Density", 0);
     SetUniform(pid, "LightCache", 1);
-    SetUniform(pid, "RayOrigin", glm::vec3(glm::transpose(modelView) * glm::vec4(camera->getTranslation(), 1)));
+    SetUniform(pid, "RayOrigin", camera->getTranslation());
     SetUniform(pid, "FocalLength", 1.0f / std::tan(FieldOfView / 2));
     SetUniform(pid, "WindowSize", float(cfg.Width), float(cfg.Height));
     SetUniform(pid, "StepSize", sqrtf(2.0) / float(ViewSamples));

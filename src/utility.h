@@ -61,7 +61,6 @@ void SetUniform(GLuint program, const char* name, float x, float y);
 void SetUniform(GLuint program, const char* name, glm::mat4 value);
 void SetUniform(GLuint program, const char* name, glm::mat3 value);
 void SetUniform(GLuint program, const char* name, glm::vec3 value);
-void SetUniform(GLuint program, const char* name, glm::vec4 value);
 void SetUniform(GLuint program, const char* name, std::vector<glm::vec3> value);
 
 void ResetState();
