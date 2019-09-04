@@ -46,20 +46,20 @@ void Camera::update(GLFWwindow* window, long long deltaTime)
 
         yaw   += xoffset;
         pitch += yoffset;
-
-        pitch = glm::clamp(pitch, -89.0f, 89.0f);
-
-        glm::vec3 front;
-        front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        front.y = sin(glm::radians(pitch));
-        front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        cameraFront = glm::normalize(front);
     }
     else if (action == GLFW_RELEASE)
     {
         lastX = -1;
         lastY = -1;
     }
+
+    pitch = glm::clamp(pitch, -89.0f, 89.0f);
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
 
     viewMatrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     projectionMatrix = glm::infinitePerspective(glm::radians(fov), float(mWidth) / float(mHeight), 1.0f);
@@ -68,4 +68,19 @@ void Camera::update(GLFWwindow* window, long long deltaTime)
 void Camera::setTranslation(glm::vec3 position)
 {
     cameraPos = position;
+}
+
+void Camera::setFov(float value)
+{
+    fov = value;
+}
+
+void Camera::setYaw(float value)
+{
+    yaw = value;
+}
+
+void Camera::setPitch(float value)
+{
+    pitch = value;
 }

@@ -22,6 +22,10 @@ public:
     float getYaw() const { return yaw; };
     float getPitch() const { return pitch; };
 
+    void setFov(float value);
+    void setYaw(float value);
+    void setPitch(float value);
+
 private:
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;

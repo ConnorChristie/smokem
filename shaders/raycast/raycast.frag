@@ -67,8 +67,9 @@ void main()
     rayStart = 0.5 * (rayStart + 1.0);
     rayStop = 0.5 * (rayStop + 1.0);
 
-    vec3 pos = rayStart;
     vec3 viewDir = normalize(rayStop - rayStart) * StepSize;
+    vec3 pos = rayStart;
+
     float T = 1.0;
     vec3 Lo = Ambient;
 

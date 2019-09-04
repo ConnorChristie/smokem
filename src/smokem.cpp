@@ -53,7 +53,6 @@ static Program* RaycastProgram;
 static Program* LightProgram;
 static Program* BlurProgram;
 
-static float FieldOfView = 0.7f;
 static bool SimulateFluid = true;
 static int ViewSamples = GridWidth * 2;
 static int LightSamples = GridWidth;
@@ -80,11 +79,6 @@ static struct {
 
 void Smokem::initSmoke()
 {
-    /*RaycastProgram = new Program({
-        Shader(GL_VERTEX_SHADER, "shaders/raycast/simple/simple.vert"),
-        Shader(GL_FRAGMENT_SHADER, "shaders/raycast/simple/simple.frag")
-    });*/
-
     RaycastProgram = new Program({
         Shader(GL_VERTEX_SHADER, "shaders/raycast/raycast.vert"),
         Shader(GL_GEOMETRY_SHADER, "shaders/raycast/raycast.gs"),
@@ -138,8 +132,6 @@ void Smokem::initSmoke()
     glDisable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
-
-glm::mat4 modelMatrix = glm::mat4(1);
 
 void Smokem::updateSmoke(long long dt)
 {
@@ -244,16 +236,19 @@ void Smokem::renderSmoke()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_3D, Surfaces.LightCache.ColorTexture);
 
+    glm::mat4 modelMatrix = glm::mat4(1);
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 0, 0));
+
     glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
 
     GLuint pid = RaycastProgram->id();
     glUseProgram(pid);
+    SetUniform(pid, "Density", 0 /* DENSITY_TEXTURE_LOC */);
+    SetUniform(pid, "LightCache", 1 /* LIGHT_CACHE_TEXTURE_LOC */);
     SetUniform(pid, "Modelview", modelView);
     SetUniform(pid, "ViewSamples", ViewSamples);
-    SetUniform(pid, "Density", 0);
-    SetUniform(pid, "LightCache", 1);
     SetUniform(pid, "RayOrigin", camera->getTranslation());
-    SetUniform(pid, "FocalLength", 1.0f / std::tan(FieldOfView / 2));
+    SetUniform(pid, "FocalLength", 1.0f / std::tan(camera->getFov() / 2));
     SetUniform(pid, "WindowSize", float(cfg.Width), float(cfg.Height));
     SetUniform(pid, "StepSize", sqrtf(2.0) / float(ViewSamples));
 
@@ -320,26 +315,43 @@ void Smokem::updateGui()
         if (ImGui::CollapsingHeader("Camera"))
         {
             glm::vec3 pos = camera->getTranslation();
+            glm::vec3 yawPitchFov = glm::vec3(camera->getYaw(), camera->getPitch(), camera->getFov());
 
+            ImGui::BeginGroup();
             ImGui::PushItemWidth(100);
+
             bool changed = ImGui::DragFloat("X", &pos.x, 0.2f, NULL, NULL); ImGui::SameLine();
-            changed = changed || ImGui::DragFloat("Y", &pos.y, 0.2f, NULL, NULL); ImGui::SameLine();
-            changed = changed || ImGui::DragFloat("Z", &pos.z, 0.2f, NULL, NULL);
+            changed |= ImGui::DragFloat("Y", &pos.y, 0.2f, NULL, NULL); ImGui::SameLine();
+            changed |= ImGui::DragFloat("Z", &pos.z, 0.2f, NULL, NULL);
+
+            changed |= ImGui::DragFloat("Yaw", &yawPitchFov.x, 0.2f, NULL, NULL); ImGui::SameLine();
+            changed |= ImGui::DragFloat("Pitch", &yawPitchFov.y, 0.2f, NULL, NULL); ImGui::SameLine();
+            changed |= ImGui::DragFloat("Fov", &yawPitchFov.z, 0.2f, NULL, NULL);
+
             ImGui::PopItemWidth();
+            ImGui::EndGroup();
 
             if (changed)
             {
                 camera->setTranslation(pos);
+
+                camera->setYaw(yawPitchFov.x);
+                camera->setPitch(yawPitchFov.y);
+                camera->setFov(yawPitchFov.z);
             }
         }
 
         if (ImGui::CollapsingHeader("Smoke"))
         {
+            ImGui::BeginGroup();
             ImGui::PushItemWidth(100);
+
             bool changed = ImGui::DragFloat("X", &smokeTranslation.x, 0.2f, NULL, NULL); ImGui::SameLine();
-            changed = changed || ImGui::DragFloat("Y", &smokeTranslation.y, 0.2f, NULL, NULL); ImGui::SameLine();
-            changed = changed || ImGui::DragFloat("Z", &smokeTranslation.z, 0.2f, NULL, NULL);
+            changed |= ImGui::DragFloat("Y", &smokeTranslation.y, 0.2f, NULL, NULL); ImGui::SameLine();
+            changed |= ImGui::DragFloat("Z", &smokeTranslation.z, 0.2f, NULL, NULL);
+
             ImGui::PopItemWidth();
+            ImGui::EndGroup();
         }
 
         if (ImGui::CollapsingHeader("Objects"))
@@ -348,23 +360,24 @@ void Smokem::updateGui()
             {
                 std::string objName = "Object" + std::to_string(i);
 
+                ImGui::BeginGroup();
                 if (ImGui::TreeNode(objName.c_str()))
                 {
                     glm::vec3 pos = objects.at(i)->getTranslation();
 
                     ImGui::PushItemWidth(100);
                     bool changed = ImGui::DragFloat("X", &pos.x, 0.2f, NULL, NULL); ImGui::SameLine();
-                    changed = changed || ImGui::DragFloat("Y", &pos.y, 0.2f, NULL, NULL); ImGui::SameLine();
-                    changed = changed || ImGui::DragFloat("Z", &pos.z, 0.2f, NULL, NULL);
+                    changed |= ImGui::DragFloat("Y", &pos.y, 0.2f, NULL, NULL); ImGui::SameLine();
+                    changed |= ImGui::DragFloat("Z", &pos.z, 0.2f, NULL, NULL);
                     ImGui::PopItemWidth();
 
                     if (changed)
                     {
                         objects.at(i)->setTranslation(pos);
                     }
-
                     ImGui::TreePop();
                 }
+                ImGui::EndGroup();
             }
         }
 
