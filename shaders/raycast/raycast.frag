@@ -5,7 +5,6 @@ out vec4 FragColor;
 uniform sampler3D Density;
 uniform sampler3D LightCache;
 
-uniform float Absorption = 10.0;
 uniform mat4 InverseProjectionMatrix;
 uniform mat4 InverseViewMatrix;
 uniform float FocalLength;
@@ -13,7 +12,8 @@ uniform vec2 WindowSize;
 uniform vec3 RayOrigin;
 uniform vec3 Ambient = vec3(0.15, 0.15, 0.20);
 uniform vec3 LightColor = vec3(1, 1, 1);
-uniform float StepSize;
+uniform float Absorption = 10.0;
+uniform float LightSamples;
 uniform int ViewSamples;
 
 float GetDensity(vec3 pos)
@@ -61,28 +61,25 @@ void main()
     vec3 objPos = vec3(20, 0, 20);
 
     Ray eye = Ray(RayOrigin, ray_wor);
-    AABB aabb = AABB(objPos, objPos + vec3(1));
+    AABB aabb = AABB(objPos, objPos + vec3(1) * 8);
 
     float tnear, tfar;
     if (!IntersectBox(eye, aabb, tnear, tfar)) return;
 
-    vec3 rayStart = eye.Origin + eye.Dir * tnear;
-    vec3 rayStop = eye.Origin + eye.Dir * tfar;
-    vec3 viewDir = normalize(rayStop - rayStart) * StepSize;
-
     float T = 1.0;
     vec3 Lo = Ambient;
 
-    vec3 pos = rayStart;
-    float remainingLength = distance(rayStop, rayStart);
+    float stepSize = (tfar - tnear) / ViewSamples;
 
-    for (int i = 0; i < ViewSamples && remainingLength > 0.0; ++i, pos += viewDir, remainingLength -= StepSize)
+    for (int i = 0; i < ViewSamples; i++)
     {
+        vec3 newPos = eye.Origin + eye.Dir * (tnear + i * stepSize);
+
         // pos is the global position but we need the local when sampling the texture
-        vec3 localPos = pos - aabb.Min;
+        vec3 localPos = (newPos - aabb.Min) / 8;
         vec3 lightColor = LightColor;
 
-        float density = GetDensity(localPos);
+        float density = texture(Density, localPos).x;
 
         if (localPos.z < 0.1)
         {
@@ -95,15 +92,15 @@ void main()
             continue;
         }
 
-        T *= 1.0 - density * StepSize * Absorption;
+        T *= 1.0 - density * LightSamples * Absorption;
         if (T <= 0.01) break;
 
         vec3 Li = lightColor * texture(LightCache, localPos).xxx;
-        Lo += Li * T * density * StepSize;
+        Lo += Li * T * density * LightSamples;
     }
 
     FragColor.rgb = Lo;
     FragColor.a = 1 - T;
 
-    // FragColor = vec4(GetDensity((pos - aabb.Min) / 8.0f).xxx, 1);
+    // FragColor = vec4((pos - aabb.Min) / 8, 1);
 }

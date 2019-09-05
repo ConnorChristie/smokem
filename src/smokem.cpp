@@ -242,7 +242,7 @@ void Smokem::renderSmoke()
     SetUniform(pid, "RayOrigin", camera->getTranslation());
     SetUniform(pid, "FocalLength", 1.0f / std::tan(camera->getFov() / 2));
     SetUniform(pid, "WindowSize", float(cfg.Width), float(cfg.Height));
-    SetUniform(pid, "StepSize", sqrtf(2.0) / float(ViewSamples));
+    SetUniform(pid, "LightSamples", sqrtf(2) / ViewSamples);
 
     glDrawArrays(GL_POINTS, 0, 1);
 }
