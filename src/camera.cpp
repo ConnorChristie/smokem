@@ -1,13 +1,13 @@
 #include "camera.h"
 
-Camera::Camera(int width, int height, glm::vec3 initialPosition)
-    : mWidth(width), mHeight(height), cameraPos(initialPosition)
+Camera::Camera(GLFWwindow* window, int width, int height, glm::vec3 initialPosition)
+    : window(window), mWidth(width), mHeight(height), cameraPos(initialPosition)
 {
 }
 
-void Camera::update(GLFWwindow* window, long long deltaTime)
+void Camera::update(float deltaTime)
 {
-    float cameraSpeed = 0.2f; //1.0f;
+    float cameraSpeed = deltaTime * 20.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
@@ -40,7 +40,7 @@ void Camera::update(GLFWwindow* window, long long deltaTime)
         lastX = xpos;
         lastY = ypos;
 
-        float sensitivity = 0.05;
+        float sensitivity = deltaTime * 5.0f;
         xoffset *= sensitivity;
         yoffset *= sensitivity;
 

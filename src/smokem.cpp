@@ -3,18 +3,26 @@
 using std::string;
 
 static Program* ModelProgram;
-static Camera* camera;
 
 static std::vector<Object*> objects;
 static std::vector<Light> lights;
 
 static glm::vec3 smokeTranslation(-10, 10, 20);
 
+static Program* RaycastProgram;
+static Program* LightProgram;
+static Program* BlurProgram;
+
+static bool SimulateFluid = true;
+static int ViewSamples = GridWidth * 2;
+static int LightSamples = GridWidth;
+
 void Smokem::initialize(GLFWwindow* window)
 {
     Config cfg = getConfig();
 
-    camera = new Camera(cfg.Width, cfg.Height, glm::vec3(-3, 2, 12));
+    this->window = window;
+    this->camera = new Camera(window, cfg.Width, cfg.Height, glm::vec3(-3, 2, 12));
 
     ModelProgram = new Program({
         Shader(GL_VERTEX_SHADER, "shaders/model.vert"),
@@ -23,10 +31,10 @@ void Smokem::initialize(GLFWwindow* window)
 
     assert(checkError());
 
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\blender\\untitled.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 0), 1.0f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\sonic\\sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(-30, 1, 0), 0.3f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\medieval-house\\medieval-house-2.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(10, 4.5f, 0), 3.0f));
-    objects.push_back(new Object(ModelProgram->id(), "D:\\Git\\opengl-tutorial\\models\\shuttle\\space-shuttle-orbiter.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(50, 8, 65), 0.04f));
+    objects.push_back(new Object(ModelProgram->id(), "models/blender/untitled.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(0, 0, 0), 1.0f));
+    objects.push_back(new Object(ModelProgram->id(), "models/sonic/sonic-the-hedgehog.obj", glm::vec3(Pi, 0, -Pi / 2.0f), glm::vec3(-30, 1, 0), 0.3f));
+    objects.push_back(new Object(ModelProgram->id(), "models/medieval-house/medieval-house-2.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(10, 4.5f, 0), 3.0f));
+    objects.push_back(new Object(ModelProgram->id(), "models/shuttle/space-shuttle-orbiter.obj", glm::vec3(0, 0, -Pi / 2.0f), glm::vec3(50, 8, 65), 0.04f));
 
     lights.push_back({
         glm::vec3(20, 100, 50), // position of the light in the world space.
@@ -42,21 +50,11 @@ void Smokem::initialize(GLFWwindow* window)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-    const char* glsl_version = "#version 150";
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    ImGui_ImplOpenGL3_Init();
 
     initSmoke();
 }
-
-static Program* RaycastProgram;
-static Program* LightProgram;
-static Program* BlurProgram;
-
-static bool SimulateFluid = true;
-static int ViewSamples = GridWidth * 2;
-static int LightSamples = GridWidth;
-static float Fips = -4;
 
 static struct {
     SlabPod Velocity;
@@ -97,8 +95,6 @@ void Smokem::initSmoke()
         Shader(GL_FRAGMENT_SHADER, "shaders/light/blur.frag")
     });
 
-    //cube = new Object(RaycastProgram->id(), "models\\cube\\cube.obj");
-
     glGenVertexArrays(1, &Vaos.CubeCenter);
     glBindVertexArray(Vaos.CubeCenter);
     CreatePointVbo(0, 0, 0);
@@ -133,7 +129,7 @@ void Smokem::initSmoke()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void Smokem::updateSmoke(long long dt)
+void Smokem::updateSmoke(float dt)
 {
     Config cfg = getConfig();
 
@@ -183,7 +179,7 @@ void Smokem::renderSmoke()
 
     glActiveTexture(GL_TEXTURE0);
 
-    // Blur and brighten the density map:
+    // Blur and brighten the density map
     bool BlurAndBrighten = true;
     if (BlurAndBrighten)
     {
@@ -203,7 +199,7 @@ void Smokem::renderSmoke()
     }
     assert(checkError());
 
-    // Generate the light cache:
+    // Generate the light cache
     bool CacheLights = true;
     if (CacheLights)
     {
@@ -223,7 +219,7 @@ void Smokem::renderSmoke()
     }
     assert(checkError());
 
-    // Perform raycasting:
+    // Perform raycasting
     glEnable(GL_BLEND);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, cfg.Width, cfg.Height);
@@ -236,16 +232,12 @@ void Smokem::renderSmoke()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_3D, Surfaces.LightCache.ColorTexture);
 
-    glm::mat4 modelMatrix = glm::mat4(1);
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 0, 0));
-
-    glm::mat4 modelView = camera->getViewMatrix() * modelMatrix;
-
     GLuint pid = RaycastProgram->id();
     glUseProgram(pid);
     SetUniform(pid, "Density", 0 /* DENSITY_TEXTURE_LOC */);
     SetUniform(pid, "LightCache", 1 /* LIGHT_CACHE_TEXTURE_LOC */);
-    SetUniform(pid, "Modelview", modelView);
+    SetUniform(pid, "InverseProjectionMatrix", glm::inverse(camera->getProjectionMatrix()));
+    SetUniform(pid, "InverseViewMatrix", glm::inverse(camera->getViewMatrix()));
     SetUniform(pid, "ViewSamples", ViewSamples);
     SetUniform(pid, "RayOrigin", camera->getTranslation());
     SetUniform(pid, "FocalLength", 1.0f / std::tan(camera->getFov() / 2));
@@ -255,11 +247,11 @@ void Smokem::renderSmoke()
     glDrawArrays(GL_POINTS, 0, 1);
 }
 
-void Smokem::update(GLFWwindow* window, long long dt)
+void Smokem::update(float dt)
 {
     Config cfg = getConfig();
 
-    camera->update(window, dt);
+    camera->update(dt);
 
     glm::mat4 viewMatrix = camera->getViewMatrix();
     glm::mat4 projectionMatrix = camera->getProjectionMatrix();
@@ -423,7 +415,6 @@ void Smokem::render()
 void Smokem::exit()
 {
     delete ModelProgram;
-
     delete RaycastProgram;
     delete LightProgram;
     delete BlurProgram;

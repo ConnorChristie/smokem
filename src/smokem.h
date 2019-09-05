@@ -48,12 +48,12 @@ class Smokem
 {
 public:
     void initialize(GLFWwindow* window);
-    void update(GLFWwindow* window, long long dt);
+    void update(float dt);
     void updateGui();
     void render();
     void exit();
 
-    void updateSmoke(long long dt);
+    void updateSmoke(float dt);
     void renderSmoke();
 
     Config getConfig() const { return config; };
@@ -63,6 +63,9 @@ private:
         "Smokem",
         1920, 1080
     };
+
+    GLFWwindow* window;
+    Camera* camera;
 
     void initSmoke();
 };

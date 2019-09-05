@@ -22,14 +22,8 @@ void Object::objectInit(GLuint programID, const char* objfile, glm::vec3 rotate,
     mInitialRotate = rotate;
 
     std::string directory = objfile;
-
-#ifdef _WIN32
-    directory = directory.substr(0, directory.find_last_of('\\'));
-    directory += '\\';
-#else
     directory = directory.substr(0, directory.find_last_of('/'));
     directory += '/';
-#endif
 
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;

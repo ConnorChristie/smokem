@@ -8,9 +8,9 @@
 class Camera
 {
 public:
-    Camera(int width, int height, glm::vec3 initialPosition);
+    Camera(GLFWwindow* window, int width, int height, glm::vec3 initialPosition);
 
-    void update(GLFWwindow* window, long long deltaTime);
+    void update(float deltaTime);
 
     glm::mat4 getViewMatrix() const { return viewMatrix; };
     glm::mat4 getProjectionMatrix() const { return projectionMatrix; };
@@ -27,6 +27,8 @@ public:
     void setPitch(float value);
 
 private:
+    GLFWwindow* window;
+
     glm::mat4 viewMatrix;
     glm::mat4 projectionMatrix;
 

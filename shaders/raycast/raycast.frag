@@ -6,7 +6,8 @@ uniform sampler3D Density;
 uniform sampler3D LightCache;
 
 uniform float Absorption = 10.0;
-uniform mat4 Modelview;
+uniform mat4 InverseProjectionMatrix;
+uniform mat4 InverseViewMatrix;
 uniform float FocalLength;
 uniform vec2 WindowSize;
 uniform vec3 RayOrigin;
@@ -20,12 +21,14 @@ float GetDensity(vec3 pos)
     return texture(Density, pos).x;
 }
 
-struct Ray {
+struct Ray
+{
     vec3 Origin;
     vec3 Dir;
 };
 
-struct AABB {
+struct AABB
+{
     vec3 Min;
     vec3 Max;
 };
@@ -49,38 +52,39 @@ bool IntersectBox(Ray r, AABB aabb, out float t0, out float t1)
 
 void main()
 {
-    vec3 rayDirection;
-    rayDirection.xy = 2.0 * gl_FragCoord.xy / WindowSize - 1.0;
-    rayDirection.x *= WindowSize.x / WindowSize.y;
-    rayDirection.z = -FocalLength;
-    rayDirection = (vec4(rayDirection, 0) * Modelview).xyz;
+    vec3 rayDirection = vec3((gl_FragCoord.xy * 2.0) / WindowSize - 1.0, -FocalLength);
 
-    Ray eye = Ray(RayOrigin, normalize(rayDirection));
-    AABB aabb = AABB(vec3(-1), vec3(1));
+    vec4 ray_clip = vec4(rayDirection, 1.0);
+    vec4 ray_eye = vec4((InverseProjectionMatrix * ray_clip).xyz, 0.0);
+    vec3 ray_wor = normalize((InverseViewMatrix * ray_eye).xyz);
+
+    vec3 objPos = vec3(20, 0, 20);
+
+    Ray eye = Ray(RayOrigin, ray_wor);
+    AABB aabb = AABB(objPos, objPos + vec3(1));
 
     float tnear, tfar;
     if (!IntersectBox(eye, aabb, tnear, tfar)) return;
-    if (tnear < 0.0) tnear = 0.0;
 
     vec3 rayStart = eye.Origin + eye.Dir * tnear;
     vec3 rayStop = eye.Origin + eye.Dir * tfar;
-    rayStart = 0.5 * (rayStart + 1.0);
-    rayStop = 0.5 * (rayStop + 1.0);
-
     vec3 viewDir = normalize(rayStop - rayStart) * StepSize;
-    vec3 pos = rayStart;
 
     float T = 1.0;
     vec3 Lo = Ambient;
 
+    vec3 pos = rayStart;
     float remainingLength = distance(rayStop, rayStart);
 
     for (int i = 0; i < ViewSamples && remainingLength > 0.0; ++i, pos += viewDir, remainingLength -= StepSize)
     {
-        float density = GetDensity(pos);
+        // pos is the global position but we need the local when sampling the texture
+        vec3 localPos = pos - aabb.Min;
         vec3 lightColor = LightColor;
 
-        if (pos.z < 0.1)
+        float density = GetDensity(localPos);
+
+        if (localPos.z < 0.1)
         {
             // Draw a dark colored floor so we can see the shadow
             density = 10;
@@ -94,10 +98,12 @@ void main()
         T *= 1.0 - density * StepSize * Absorption;
         if (T <= 0.01) break;
 
-        vec3 Li = lightColor * texture(LightCache, pos).xxx;
+        vec3 Li = lightColor * texture(LightCache, localPos).xxx;
         Lo += Li * T * density * StepSize;
     }
 
     FragColor.rgb = Lo;
     FragColor.a = 1 - T;
+
+    // FragColor = vec4(GetDensity((pos - aabb.Min) / 8.0f).xxx, 1);
 }

@@ -43,10 +43,12 @@ int main(int argc, char *argv[])
         auto deltaTime = currentTime - previousTime;
         previousTime = currentTime;
 
-        smokem.update(window, deltaTime.count());
+        float seconds = deltaTime.count() / 1e9f;
+
+        smokem.update(seconds);
         smokem.render();
 
-        smokem.updateSmoke(deltaTime.count());
+        smokem.updateSmoke(seconds);
         smokem.renderSmoke();
 
         glfwSwapBuffers(window);
